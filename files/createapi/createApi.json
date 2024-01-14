@@ -1,0 +1,136 @@
+{
+  "compartment_id": "<API Gateway Compartment OCID>",
+  "defined_tags": {
+    "Oracle-Tags": {
+      "CreatedBy": "oracleidentitycloudservice/cristiano.hoshikawa@oracle.com",
+      "CreatedOn": "2024-01-01T13:15:34.193Z"
+    }
+  },
+  "display_name": "createApi",
+  "endpoint": "https://aaaaaaaaaaaaaaaaaaaaaaaaaa.apigateway.us-ashburn-1.oci.customer-oci.com/createApi",
+  "freeform_tags": {},
+  "gateway_id": "ocid1.apigateway.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan",
+  "id": "ocid1.apideployment.oc1.iad.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "lifecycle_details": null,
+  "lifecycle_state": "ACTIVE",
+  "path_prefix": "/createApi",
+  "specification": {
+    "logging_policies": {
+      "access_log": null,
+      "execution_log": {
+        "is_enabled": null,
+        "log_level": "INFO"
+      }
+    },
+    "request_policies": {
+      "authentication": {
+        "cache_key": [
+          "token",
+          "displayName",
+          "apiCompartmentId"
+        ],
+        "function_id": "<createApi function OCID>",
+        "is_anonymous_access_allowed": false,
+        "parameters": {
+          "apiCompartmentId": "request.headers[apiCompartmentId]",
+          "body": "request.body",
+          "displayName": "request.headers[displayName]",
+          "token": "request.headers[token]"
+        },
+        "token_header": null,
+        "token_query_param": null,
+        "type": "CUSTOM_AUTHENTICATION",
+        "validation_failure_policy": null
+      },
+      "cors": null,
+      "dynamic_authentication": null,
+      "mutual_tls": {
+        "allowed_sans": [],
+        "is_verified_certificate_required": false
+      },
+      "rate_limiting": null,
+      "usage_plans": null
+    },
+    "routes": [
+      {
+        "backend": {
+          "body": "{\"status\": \"success\"}",
+          "headers": [],
+          "status": 200,
+          "type": "STOCK_RESPONSE_BACKEND"
+        },
+        "logging_policies": {
+          "access_log": null,
+          "execution_log": {
+            "is_enabled": null,
+            "log_level": null
+          }
+        },
+        "methods": [
+          "POST"
+        ],
+        "path": "/create",
+        "request_policies": {
+          "authorization": {
+            "type": "AUTHENTICATION_ONLY"
+          },
+          "body_validation": null,
+          "cors": null,
+          "header_transformations": {
+            "filter_headers": null,
+            "rename_headers": null,
+            "set_headers": {
+              "items": [
+                {
+                  "if_exists": "OVERWRITE",
+                  "name": "token",
+                  "values": [
+                    "${request.headers[token]}"
+                  ]
+                },
+                {
+                  "if_exists": "OVERWRITE",
+                  "name": "displayName",
+                  "values": [
+                    "${request.headers[displayName]}"
+                  ]
+                },
+                {
+                  "if_exists": "OVERWRITE",
+                  "name": "apiCompartmentId",
+                  "values": [
+                    "${request.headers[apiCompartmentId]}"
+                  ]
+                }
+              ]
+            }
+          },
+          "header_validations": null,
+          "query_parameter_transformations": null,
+          "query_parameter_validations": null,
+          "response_cache_lookup": null
+        },
+        "response_policies": {
+          "header_transformations": {
+            "filter_headers": null,
+            "rename_headers": null,
+            "set_headers": {
+              "items": [
+                {
+                  "if_exists": "APPEND",
+                  "name": "api_id",
+                  "values": [
+                    "${request.auth[api_id]}"
+                  ]
+                }
+              ]
+            }
+          },
+          "response_cache_store": null
+        }
+      }
+    ]
+  },
+  "time_created": "2024-01-01T13:15:35.448000+00:00",
+  "time_updated": "2024-01-01T13:39:00.396000+00:00"
+}

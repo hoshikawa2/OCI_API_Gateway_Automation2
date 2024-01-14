@@ -1,0 +1,523 @@
+import base64
+import json
+import io
+from fdk import response
+import oci
+import requests
+import time
+from itertools import groupby
+
+#### IDCS Routines
+#### https://docs.oracle.com/en/learn/apigw-modeldeployment/index.html#introduction
+#### https://docs.oracle.com/en/learn/migrate-api-to-api-gateway/#introduction
+
+def auth_idcs(token, url, clientID, secretID):
+    url = url + "/oauth2/v1/introspect"
+
+    auth = clientID + ":" + secretID
+    auth_bytes = auth.encode("ascii")
+    auth_base64_bytes = base64.b64encode(auth_bytes)
+    auth_base64_message = auth_base64_bytes.decode("ascii")
+
+    headers = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': 'Basic ' + auth_base64_message
+    }
+
+    payload = "token=" + token
+
+    response = requests.request("POST", url, headers=headers, data=payload)
+    return response
+
+#Function used to load the configurations from the config.json file
+def getOptions():
+    fo = open("config.json", "r")
+    config = fo.read()
+    options = json.loads(config)
+    return options
+
+### OCI API Gateway Migration Routines
+
+def find_base_path(strPath):
+    base_path = strPath.split('/')[1]
+    if (len(base_path) == 0):
+        base_path = strPath
+    else:
+        base_path = "/" + base_path
+    return base_path
+
+def find_path(strPath):
+    base_path = strPath.split('/')
+    if (len(base_path) == 0):
+        return strPath
+    else:
+        auxPath = ""
+        skipCount = 0
+        for b in base_path:
+            if (skipCount > 1):
+                auxPath = auxPath + "/" + b
+            skipCount = skipCount + 1
+        base_path = auxPath
+        return auxPath
+
+def removeLastSlash(path):
+    return path.rstrip("/")
+
+def creeateOrUpdateDeployment(compartmendId, displayName, validation_deployment_details, create_deployment_details):
+    config = oci.config.from_file("config")
+    apigateway_client = oci.apigateway.DeploymentClient(config)
+    listGateway = apigateway_client.list_deployments(compartment_id=compartmendId, display_name=displayName, lifecycle_state="ACTIVE")
+    gateway = json.loads(str(listGateway.data))
+    if (gateway["items"] != []):
+        gateway_id = gateway["items"][0]["gateway_id"]
+        deployment_id = gateway["items"][0]["id"]
+        apigateway_client.update_deployment(deployment_id=deployment_id, update_deployment_details=validation_deployment_details)
+    else:
+        apigateway_client.create_deployment(create_deployment_details=create_deployment_details)
+
+def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gateway_id):
+    config = oci.config.from_file("config")
+    logging = oci.loggingingestion.LoggingClient(config)
+    apigateway_client = oci.apigateway.DeploymentClient(config)
+    listGateway = apigateway_client.list_deployments(compartment_id=compartmentId, display_name=displayName, lifecycle_state="ACTIVE")
+    gateway = json.loads(str(listGateway.data))
+    if (gateway["items"] != []):
+        gateway_id = gateway["items"][0]["gateway_id"]
+        deployment_id = gateway["items"][0]["id"]
+    else:
+        gateway_id = api_gateway_id
+        deployment_id = 0
+
+    path_prefix = "/"
+    routes = [ ]
+    new_routes = [ ]
+    for item in payload:
+        methods = json.loads(json.dumps(item["METHOD"].split(" ")))
+        path_prefix = item["PATH_PREFIX"]
+        if (item["SCHEMA_BODY_VALIDATION"] != ""):
+            callback_url = ("https://" + host + item["PATH_PREFIX"] + "validation-callback" + item["PATH"]).replace("{", "${request.path[").replace("}", "]}")
+            put_logs_response = logging.put_logs(
+                log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                put_logs_details=oci.loggingingestion.models.PutLogsDetails(
+                    specversion="EXAMPLE-specversion-Value",
+                    log_entry_batches=[
+                        oci.loggingingestion.models.LogEntryBatch(
+                            entries=[
+                                oci.loggingingestion.models.LogEntry(
+                                    data="callback_url: " + callback_url,
+                                    id="ocid1.test.oc1..00000001.EXAMPLE-id-Value")],
+                            source="EXAMPLE-source-Value",
+                            type="EXAMPLE-type-Value")]))
+            routes.append(
+                oci.apigateway.models.ApiSpecificationRoute(
+                    path=item["PATH"],
+                    backend=oci.apigateway.models.HTTPBackend(
+                        type="HTTP_BACKEND",
+                        url=callback_url,
+                        is_ssl_verify_disabled=False),
+                    methods=methods,
+                    request_policies=oci.apigateway.models.ApiSpecificationRouteRequestPolicies(
+                        header_transformations=oci.apigateway.models.HeaderTransformationPolicy(
+                            set_headers=oci.apigateway.models.SetHeaderPolicy(
+                                items=[
+                                    oci.apigateway.models.SetHeaderPolicyItem(
+                                        name="body_schema_validation",
+                                        values=[item["SCHEMA_BODY_VALIDATION"]],
+                                        if_exists="APPEND")]),
+                        )
+                    )))
+            new_routes.append(
+                oci.apigateway.models.ApiSpecificationRoute(
+                    path=item["PATH"],
+                    backend=oci.apigateway.models.HTTPBackend(
+                        type="HTTP_BACKEND",
+                        url=item["ENDPOINT"],
+                        is_ssl_verify_disabled=False),
+                    methods=methods,
+                    request_policies=oci.apigateway.models.ApiSpecificationRouteRequestPolicies(
+                        header_transformations=oci.apigateway.models.HeaderTransformationPolicy(
+                            set_headers=oci.apigateway.models.SetHeaderPolicy(
+                                items=[
+                                    oci.apigateway.models.SetHeaderPolicyItem(
+                                        name="body_schema_validation",
+                                        values=[item["SCHEMA_BODY_VALIDATION"]],
+                                        if_exists="APPEND")]),
+                        )
+                    )
+                ))
+
+        else:
+            routes.append(
+                oci.apigateway.models.ApiSpecificationRoute(
+                    path=item["PATH"],
+                    backend=oci.apigateway.models.HTTPBackend(
+                        type="HTTP_BACKEND",
+                        url=item["ENDPOINT"],
+                        is_ssl_verify_disabled=False),
+                    methods=methods))
+
+    if (new_routes != [ ]):
+        validation_deployment_details=oci.apigateway.models.UpdateDeploymentDetails(
+            display_name=displayName + "-validation",
+            specification=oci.apigateway.models.ApiSpecification(
+                request_policies=oci.apigateway.models.ApiSpecificationRequestPolicies(
+                    authentication=oci.apigateway.models.CustomAuthenticationPolicy(
+                        type="CUSTOM_AUTHENTICATION",
+                        function_id=functionId,
+                        is_anonymous_access_allowed=False,
+                        parameters={
+                            'token': 'request.headers[token]',
+                            'body': 'request.body',
+                            'body_schema_validation': 'request.headers[body_schema_validation]'},
+                        cache_key=["token"],
+                        validation_failure_policy=oci.apigateway.models.ModifyResponseValidationFailurePolicy(
+                            type="MODIFY_RESPONSE",
+                            response_code="401",
+                            response_message="${request.auth[error]}"
+                        )
+                    )),
+                routes=new_routes))
+        create_deployment_details=oci.apigateway.models.CreateDeploymentDetails(
+            display_name=displayName + "-validation",
+            compartment_id=compartmentId,
+            gateway_id=gateway_id,
+            path_prefix= path_prefix + "validation-callback",
+            specification=oci.apigateway.models.ApiSpecification(
+                request_policies=oci.apigateway.models.ApiSpecificationRequestPolicies(
+                    authentication=oci.apigateway.models.CustomAuthenticationPolicy(
+                        type="CUSTOM_AUTHENTICATION",
+                        function_id=functionId,
+                        is_anonymous_access_allowed=False,
+                        parameters={
+                            'token': 'request.headers[token]',
+                            'body': 'request.body',
+                            'body_schema_validation': 'request.headers[body_schema_validation]'},
+                        cache_key=["token"],
+                        validation_failure_policy=oci.apigateway.models.ModifyResponseValidationFailurePolicy(
+                            type="MODIFY_RESPONSE",
+                            response_code="401",
+                            response_message="${request.auth[error]}"
+                        )
+                    )),
+                routes=new_routes))
+        creeateOrUpdateDeployment(compartmendId=compartmentId, displayName=displayName + "-validation", validation_deployment_details=validation_deployment_details, create_deployment_details=create_deployment_details)
+
+    if (routes != [ ]):
+        validation_deployment_details=oci.apigateway.models.UpdateDeploymentDetails(
+            display_name=displayName,
+            specification=oci.apigateway.models.ApiSpecification(
+                request_policies=oci.apigateway.models.ApiSpecificationRequestPolicies(
+                    authentication=oci.apigateway.models.CustomAuthenticationPolicy(
+                        type="CUSTOM_AUTHENTICATION",
+                        function_id=functionId,
+                        is_anonymous_access_allowed=False,
+                        parameters={
+                            'token': 'request.headers[token]',
+                            'body': 'request.body'},
+                        cache_key=["token"])),
+                routes=routes))
+
+        create_deployment_details=oci.apigateway.models.CreateDeploymentDetails(
+            display_name=displayName,
+            compartment_id=compartmentId,
+            gateway_id=gateway_id,
+            path_prefix= path_prefix,
+            specification=oci.apigateway.models.ApiSpecification(
+                request_policies=oci.apigateway.models.ApiSpecificationRequestPolicies(
+                    authentication=oci.apigateway.models.CustomAuthenticationPolicy(
+                        type="CUSTOM_AUTHENTICATION",
+                        function_id=functionId,
+                        is_anonymous_access_allowed=False,
+                        parameters={
+                            'token': 'request.headers[token]',
+                            'body': 'request.body'},
+                        cache_key=["token"])),
+                routes=routes))
+        creeateOrUpdateDeployment(compartmendId=compartmentId, displayName=displayName, validation_deployment_details=validation_deployment_details, create_deployment_details=create_deployment_details)
+
+
+def accMethods(routes, path, status):
+    METHOD = ""
+    for spec in routes:
+        if (find_path(spec["path"]) == path and spec["backend"]["status"] == status):
+            for method in spec["methods"]:
+                METHOD = (METHOD + " " + method).lstrip().upper()
+    return METHOD
+
+def accMethods_v2(routes, path, status):
+    METHOD = ""
+    for spec in routes:
+        if (spec["path"] == path and spec["backend"]["status"] == status):
+            for method in spec["methods"]:
+                METHOD = (METHOD + " " + method).lstrip().upper()
+    return METHOD
+
+def check_endpoint(endpoint):
+    if (endpoint.find("http://") == -1 and endpoint.find("https://") == -1):
+        endpoint = "https://" + endpoint
+    return endpoint
+
+def key_func(k):
+    return k['PATH']
+
+def group_by(payload):
+    config = oci.config.from_file("config")
+    logging = oci.loggingingestion.LoggingClient(config)
+    payload = json.loads(payload)
+    INFO = sorted(payload, key=key_func)
+    result_payload = [ ]
+    for key, value in groupby(INFO, key_func):
+        list_elements = [ ]
+        method_list = ""
+        for element in list(value):
+            list_elements.append(element)
+        for subItem in list_elements:
+            item = json.loads(json.dumps(subItem))
+            if (item["METHOD"] not in method_list):
+                method_list = (method_list + " " + item["METHOD"]).lstrip().upper()
+            API_NAME = item["API_NAME"]
+            TYPE = item["TYPE"]
+            ENVIRONMENT = item["ENVIRONMENT"]
+            PATH_PREFIX = item["PATH_PREFIX"]
+            PATH = item["PATH"]
+            ENDPOINT = item["ENDPOINT"]
+            SCHEMA_BODY_VALIDATION = item["SCHEMA_BODY_VALIDATION"]
+        result_payload.append({"API_NAME": API_NAME, "TYPE": TYPE, "ENVIRONMENT": ENVIRONMENT, "PATH_PREFIX": PATH_PREFIX, "PATH": PATH, "ENDPOINT": ENDPOINT, "METHOD": method_list, "SCHEMA_BODY_VALIDATION": SCHEMA_BODY_VALIDATION})
+    return result_payload
+
+def process_api_spec(api_id, compartmentId, environment, swagger, functionId, host, api_gateway_id):
+    type = "REST"
+    config = oci.config.from_file("config")
+    apigateway_client = oci.apigateway.ApiGatewayClient(config)
+    logging = oci.loggingingestion.LoggingClient(config)
+    #-----------------------------------------------------------------
+    try:
+        data = swagger
+        fullSpec = json.loads(data)
+
+        version = "3"
+        try:
+            version = (fullSpec["swagger"])[:1]
+        except:
+            version = (fullSpec["openapi"])[:1]
+
+        print("version", version)
+
+        if (version == "3"):
+            endPoint = fullSpec["servers"][0]["url"]
+        else:
+            endPoint = fullSpec["host"]
+
+        get_api = apigateway_client.get_api_deployment_specification(api_id=api_id, opc_request_id="DEPLOY-0001")
+
+        api_spec = json.loads(str(get_api.data))
+
+        json_data_list = []
+
+        for spec in api_spec["routes"]:
+            status = spec["backend"]["status"]
+            if (version == "3"):
+                fullEndpoint = (endPoint + find_base_path(spec["path"]) + find_path(spec["path"])).replace("{", "${request.path[").replace("}", "]}")
+                FULL_PATH = spec["path"]
+                ENDPOINT = fullEndpoint
+                PATH = find_path(spec["path"])
+                PATH_PREFIX = find_base_path(spec["path"])
+                METHOD = accMethods(api_spec["routes"], PATH, status)
+            else:
+                fullEndpoint = check_endpoint((endPoint + removeLastSlash(fullSpec["basePath"]) + spec["path"]).replace("{", "${request.path[").replace("}", "]}"))
+                FULL_PATH = fullSpec["basePath"] + spec["path"]
+                ENDPOINT = fullEndpoint
+                PATH = spec["path"]
+                PATH_PREFIX = removeLastSlash(fullSpec["basePath"])
+                METHOD = accMethods_v2(api_spec["routes"], PATH, status)
+
+            OPERATIONID = fullSpec["paths"][spec["path"]][str(spec["methods"][0]).lower()]["operationId"]
+            API_NAME = fullSpec["info"]["title"]
+            if (version == "3"):
+                try:
+                    SCHEMA_BODY_VALIDATION = str(fullSpec["paths"][spec["path"]][str(spec["methods"][0]).lower()]["requestBody"]["content"]["application/json"])
+                    CONTENT_TYPE = "application/json"
+                except:
+                    SCHEMA_BODY_VALIDATION = ""
+                    CONTENT_TYPE = ""
+            else:
+                SCHEMA_BODY_VALIDATION = ""
+                CONTENT_TYPE = ""
+                try:
+                    reference = str(fullSpec["paths"][spec["path"]][str(spec["methods"][0]).lower()]["parameters"][0]["schema"]["$ref"]).replace("#/definitions/", "")
+                    SCHEMA_BODY_VALIDATION = reference + "," + api_id
+                    CONTENT_TYPE = "application/json"
+                except:
+                    SCHEMA_BODY_VALIDATION = ""
+                    CONTENT_TYPE = ""
+            TYPE = type
+            ENVIRONMENT = environment
+            json_data_list.append({
+                'API_NAME': API_NAME,
+                'TYPE': TYPE,
+                'ENVIRONMENT': ENVIRONMENT,
+                'METHOD': METHOD,
+                'PATH_PREFIX': PATH_PREFIX,
+                'PATH': PATH,
+                'ENDPOINT': ENDPOINT,
+                'SCHEMA_BODY_VALIDATION': SCHEMA_BODY_VALIDATION,
+                'CONTENT_TYPE': CONTENT_TYPE
+            })
+            print(API_NAME, TYPE, ENVIRONMENT, METHOD, PATH_PREFIX, PATH, ENDPOINT, SCHEMA_BODY_VALIDATION, CONTENT_TYPE)
+            put_logs_response = logging.put_logs(
+                log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                put_logs_details=oci.loggingingestion.models.PutLogsDetails(
+                    specversion="EXAMPLE-specversion-Value",
+                    log_entry_batches=[
+                        oci.loggingingestion.models.LogEntryBatch(
+                            entries=[
+                                oci.loggingingestion.models.LogEntry(
+                                    data="api deployment: " + json.dumps({
+                                        'API_NAME': API_NAME,
+                                        'TYPE': TYPE,
+                                        'ENVIRONMENT': ENVIRONMENT,
+                                        'METHOD': METHOD,
+                                        'PATH_PREFIX': PATH_PREFIX,
+                                        'PATH': PATH,
+                                        'ENDPOINT': ENDPOINT,
+                                        'SCHEMA_BODY_VALIDATION': SCHEMA_BODY_VALIDATION,
+                                        'CONTENT_TYPE': CONTENT_TYPE
+                                    }),
+                                    id="ocid1.test.oc1..00000001.EXAMPLE-id-Value")],
+                            source="EXAMPLE-source-Value",
+                            type="EXAMPLE-type-Value")]))
+
+
+        payload = json.dumps(json_data_list)
+        json_data_list = { each['PATH'] : each for each in json_data_list}.values()
+        put_logs_response = logging.put_logs(
+            log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            put_logs_details=oci.loggingingestion.models.PutLogsDetails(
+                specversion="EXAMPLE-specversion-Value",
+                log_entry_batches=[
+                    oci.loggingingestion.models.LogEntryBatch(
+                        entries=[
+                            oci.loggingingestion.models.LogEntry(
+                                data="json_data_list: " + str(json_data_list),
+                                id="ocid1.test.oc1..00000001.EXAMPLE-id-Value")],
+                        source="EXAMPLE-source-Value",
+                        type="EXAMPLE-type-Value")]))
+
+        if (version == "2"):
+            payload = json.loads(json.dumps(group_by(payload)))
+            json_data_list = { each['PATH'] : each for each in payload}.values()
+        print(payload)
+        applyAuthApi(compartmentId=compartmentId, displayName=API_NAME, payload=json_data_list, functionId=functionId, host=host, api_gateway_id=api_gateway_id)
+
+    except(Exception) as ex:
+        jsonData = 'error parsing json payload: ' + str(ex)
+        put_logs_response = logging.put_logs(
+            log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            put_logs_details=oci.loggingingestion.models.PutLogsDetails(
+                specversion="EXAMPLE-specversion-Value",
+                log_entry_batches=[
+                    oci.loggingingestion.models.LogEntryBatch(
+                        entries=[
+                            oci.loggingingestion.models.LogEntry(
+                                data="error(3): " + jsonData,
+                                id="ocid1.test.oc1..00000001.EXAMPLE-id-Value")],
+                        source="EXAMPLE-source-Value",
+                        type="EXAMPLE-type-Value")]))
+
+###
+
+def handler(ctx, data: io.BytesIO = None):
+    config = oci.config.from_file("config")
+    logging = oci.loggingingestion.LoggingClient(config)
+
+    # functions context variables
+    app_context = dict(ctx.Config())
+
+    jsonData = ""
+
+    options = getOptions()
+
+    try:
+        header = json.loads(data.getvalue().decode('utf-8'))["data"]
+        url = options["BaseUrl"]
+        body = dict(json.loads(data.getvalue().decode('utf-8')).get("data"))["body"]
+        # body content
+        swagger = str(body)
+        body = json.loads(body)
+
+        environment = "DEV" #for future development
+
+        # header values
+        access_token = header["token"]
+        api_id = header["apiId"]
+        host = header["host"]
+        compartmentId = header['apiCompartmentId']
+        functionId = header['functionId']
+        api_gateway_id = header['apiGatewayId']
+
+        authorization = auth_idcs(access_token, url, options["ClientId"], options["ClientSecret"])
+        try:
+            if (authorization.json().get("active") != True):
+                return response.Response(
+                    ctx,
+                    status_code=401,
+                    response_data=json.dumps({"active": False, "wwwAuthenticate": jsonData})
+                )
+        except(Exception) as ex1:
+            jsonData = 'error parsing json payload: ' + str(ex1)
+            put_logs_response = logging.put_logs(
+                log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                put_logs_details=oci.loggingingestion.models.PutLogsDetails(
+                    specversion="EXAMPLE-specversion-Value",
+                    log_entry_batches=[
+                        oci.loggingingestion.models.LogEntryBatch(
+                            entries=[
+                                oci.loggingingestion.models.LogEntry(
+                                    data="error(1): " + jsonData,
+                                    id="ocid1.test.oc1..00000001.EXAMPLE-id-Value")],
+                            source="EXAMPLE-source-Value",
+                            type="EXAMPLE-type-Value")]))
+
+            return response.Response(
+                ctx,
+                status_code=401,
+                response_data=json.dumps({"active": False, "wwwAuthenticate": jsonData})
+            )
+
+        # Create API spec
+        process_api_spec(api_id=api_id, compartmentId=compartmentId, environment=environment, swagger=swagger, functionId=functionId, host=host, api_gateway_id=api_gateway_id)
+
+        rdata = json.dumps({
+            "active": True,
+            "context": {
+                "api_id": api_id
+            }})
+
+        return response.Response(
+            ctx, response_data=rdata,
+            status_code=200,
+            headers={"Content-Type": "application/json", "apiId": api_id, "environment": environment}
+        )
+
+    except(Exception) as ex:
+        jsonData = 'error parsing json payload: ' + str(ex)
+        put_logs_response = logging.put_logs(
+            log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            put_logs_details=oci.loggingingestion.models.PutLogsDetails(
+                specversion="EXAMPLE-specversion-Value",
+                log_entry_batches=[
+                    oci.loggingingestion.models.LogEntryBatch(
+                        entries=[
+                            oci.loggingingestion.models.LogEntry(
+                                data="error(2): " + jsonData,
+                                id="ocid1.test.oc1..00000001.EXAMPLE-id-Value")],
+                        source="EXAMPLE-source-Value",
+                        type="EXAMPLE-type-Value")]))
+
+        pass
+
+    return response.Response(
+        ctx,
+        status_code=401,
+        response_data=json.dumps({"active": False, "wwwAuthenticate": jsonData})
+    )
