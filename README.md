@@ -241,3 +241,4 @@ To create an automation to:
 - [OpenAPI schema validator](https://pypi.org/project/openapi-schema-validator/)
 - [Swagger schema validator](https://pypi.org/project/bravado-core/)
 - [Adding Context Variables to Policies and HTTP Back End Definitions](https://docs.oracle.com/en-us/iaas/Content/APIGateway/Tasks/apigatewaycontextvariables.htm)
+- [IDCS API Rate Limits](https://docs.oracle.com/en/cloud/paas/identity-cloud/uaids/oracle-identity-cloud-service-pricing-models.html#GUID-C1505A67-9C21-484A-8395-04C4253FA1CD)
