@@ -220,6 +220,7 @@ To create an automation to:
 
 - OCI API Gateway authorization function cannot read Transformations (HEADER, QUERY, BODY)
 - OCI API Gateway authorization function cannot obtain the deployment_id, route path and gateway_id while the function is running 
+- OCI API Gateway Authorization Function with **IDCS OAuth2** validation has the limitation to 60/90 requests/second but can uses the OCI API Gateway **cache** on HEADER **token**. If you are thinking use the token cache to pass authentication, remember that the Authorization function has the Swagger/OpenAPI validation too, so the validation will not occur. The routine will bypass the validation because of the OCI API Gateway cache.
 
 **These services (createApi, deployApi and applyValidationApi)**
 
