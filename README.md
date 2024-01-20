@@ -158,7 +158,7 @@ You need to deploy the API (you can see the **deployment** file [applyValidation
 
 ![img_17.png](images/img_17.png)
 
-![img.png](images/img_18a.png)
+![img.png](images/img_18d.png)
 
 ![img_20.png](images/img_20.png)
 
@@ -166,7 +166,7 @@ There are 4 news HEADER parameters:
 
 - **apiId**: It's your **OCI API Gateway** API specification **OCID** 
 - **functionId**: It's your authorization **OCI function** **OCID** mentioned in **authApi** service.
-- **host**: It's your **OCI API Gateway** endpoint. You can find this information in the console of your instance.
+- **host_name**: It's your **OCI API Gateway** endpoint. You can find this information in the console of your instance.
 - **apiGatewayId**: It's your **OCI API Gateway** deployment **OCID** to deploy your specification
 
 And you can test with:
@@ -177,7 +177,7 @@ And you can test with:
     --header 'apiGatewayId: ocid1.apigateway.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan' \
     --header 'apiCompartmentId: ocid1.compartment.oc1..aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' \
     --header 'functionId: ocid1.fnfunc.oc1.iad.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' \
-    --header 'host: xxxxxxxxxxxxxxxxxxxxxxx.apigateway.us-ashburn-1.oci.customer-oci.com' \
+    --header 'host_name: xxxxxxxxxxxxxxxxxxxxxxx.apigateway.us-ashburn-1.oci.customer-oci.com' \
     --header 'Content-Type: application/json' \
     --data-raw '<YOUR OPENAPI SPEC>'
 

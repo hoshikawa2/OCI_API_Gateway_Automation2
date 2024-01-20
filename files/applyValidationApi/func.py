@@ -63,14 +63,28 @@ def find_path(strPath):
 def removeLastSlash(path):
     return path.rstrip("/")
 
-def creeateOrUpdateDeployment(compartmendId, displayName, validation_deployment_details, create_deployment_details):
+def creeateOrUpdateDeployment(compartmendId, displayName, validation_deployment_details, create_deployment_details, api_gateway_id):
     config = oci.config.from_file("config")
     apigateway_client = oci.apigateway.DeploymentClient(config)
     listGateway = apigateway_client.list_deployments(compartment_id=compartmendId, display_name=displayName, lifecycle_state="ACTIVE")
     gateway = json.loads(str(listGateway.data))
-    if (gateway["items"] != []):
-        gateway_id = gateway["items"][0]["gateway_id"]
-        deployment_id = gateway["items"][0]["id"]
+    ind = -1
+    c = -1
+    if (len(gateway) > 0):
+        c = 0
+        for item in gateway["items"]:
+            if (item["gateway_id"] == api_gateway_id):
+                ind = c
+                break
+            c = c + 1
+    if (gateway["items"] != [] and c > -1 and ind > -1):
+        gateway_id = gateway["items"][ind]["gateway_id"]
+        deployment_id = gateway["items"][ind]["id"]
+    else:
+        gateway_id = api_gateway_id
+        deployment_id = 0
+
+    if (gateway["items"] != [] and deployment_id > 0):
         apigateway_client.update_deployment(deployment_id=deployment_id, update_deployment_details=validation_deployment_details)
     else:
         apigateway_client.create_deployment(create_deployment_details=create_deployment_details)
@@ -81,9 +95,18 @@ def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gate
     apigateway_client = oci.apigateway.DeploymentClient(config)
     listGateway = apigateway_client.list_deployments(compartment_id=compartmentId, display_name=displayName, lifecycle_state="ACTIVE")
     gateway = json.loads(str(listGateway.data))
-    if (gateway["items"] != []):
-        gateway_id = gateway["items"][0]["gateway_id"]
-        deployment_id = gateway["items"][0]["id"]
+    ind = -1
+    c = -1
+    if (len(gateway) > 0):
+        c = 0
+        for item in gateway["items"]:
+            if (item["gateway_id"] == api_gateway_id):
+                ind = c
+                break
+            c = c + 1
+    if (gateway["items"] != [] and c > -1 and ind > -1):
+        gateway_id = gateway["items"][ind]["gateway_id"]
+        deployment_id = gateway["items"][ind]["id"]
     else:
         gateway_id = api_gateway_id
         deployment_id = 0
@@ -97,7 +120,7 @@ def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gate
         if (item["SCHEMA_BODY_VALIDATION"] != ""):
             callback_url = ("https://" + host + item["PATH_PREFIX"] + "validation-callback" + item["PATH"]).replace("{", "${request.path[").replace("}", "]}")
             put_logs_response = logging.put_logs(
-                log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                log_id="ocid1.log.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan",
                 put_logs_details=oci.loggingingestion.models.PutLogsDetails(
                     specversion="EXAMPLE-specversion-Value",
                     log_entry_batches=[
@@ -200,9 +223,23 @@ def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gate
                         )
                     )),
                 routes=new_routes))
-        creeateOrUpdateDeployment(compartmendId=compartmentId, displayName=displayName + "-validation", validation_deployment_details=validation_deployment_details, create_deployment_details=create_deployment_details)
+        creeateOrUpdateDeployment(compartmendId=compartmentId, displayName=displayName + "-validation", validation_deployment_details=validation_deployment_details, create_deployment_details=create_deployment_details, api_gateway_id=api_gateway_id)
 
     if (routes != [ ]):
+        # apigateway_client.update_deployment(deployment_id=deployment_id, update_deployment_details=oci.apigateway.models.UpdateDeploymentDetails(
+        #     display_name=displayName,
+        #     specification=oci.apigateway.models.ApiSpecification(
+        #         request_policies=oci.apigateway.models.ApiSpecificationRequestPolicies(
+        #             authentication=oci.apigateway.models.CustomAuthenticationPolicy(
+        #                 type="CUSTOM_AUTHENTICATION",
+        #                 function_id=functionId,
+        #                 is_anonymous_access_allowed=False,
+        #                 parameters={
+        #                     'token': 'request.headers[token]',
+        #                     'body': 'request.body'},
+        #                 cache_key=["token"])),
+        #             routes=routes)))
+
         validation_deployment_details=oci.apigateway.models.UpdateDeploymentDetails(
             display_name=displayName,
             specification=oci.apigateway.models.ApiSpecification(
@@ -233,7 +270,7 @@ def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gate
                             'body': 'request.body'},
                         cache_key=["token"])),
                 routes=routes))
-        creeateOrUpdateDeployment(compartmendId=compartmentId, displayName=displayName, validation_deployment_details=validation_deployment_details, create_deployment_details=create_deployment_details)
+        creeateOrUpdateDeployment(compartmendId=compartmentId, displayName=displayName, validation_deployment_details=validation_deployment_details, create_deployment_details=create_deployment_details, api_gateway_id=api_gateway_id)
 
 
 def accMethods(routes, path, status):
@@ -365,7 +402,7 @@ def process_api_spec(api_id, compartmentId, environment, swagger, functionId, ho
             })
             print(API_NAME, TYPE, ENVIRONMENT, METHOD, PATH_PREFIX, PATH, ENDPOINT, SCHEMA_BODY_VALIDATION, CONTENT_TYPE)
             put_logs_response = logging.put_logs(
-                log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                log_id="ocid1.log.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan",
                 put_logs_details=oci.loggingingestion.models.PutLogsDetails(
                     specversion="EXAMPLE-specversion-Value",
                     log_entry_batches=[
@@ -391,7 +428,7 @@ def process_api_spec(api_id, compartmentId, environment, swagger, functionId, ho
         payload = json.dumps(json_data_list)
         json_data_list = { each['PATH'] : each for each in json_data_list}.values()
         put_logs_response = logging.put_logs(
-            log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            log_id="ocid1.log.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan",
             put_logs_details=oci.loggingingestion.models.PutLogsDetails(
                 specversion="EXAMPLE-specversion-Value",
                 log_entry_batches=[
@@ -412,7 +449,7 @@ def process_api_spec(api_id, compartmentId, environment, swagger, functionId, ho
     except(Exception) as ex:
         jsonData = 'error parsing json payload: ' + str(ex)
         put_logs_response = logging.put_logs(
-            log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            log_id="ocid1.log.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan",
             put_logs_details=oci.loggingingestion.models.PutLogsDetails(
                 specversion="EXAMPLE-specversion-Value",
                 log_entry_batches=[
@@ -445,12 +482,16 @@ def handler(ctx, data: io.BytesIO = None):
         swagger = str(body)
         body = json.loads(body)
 
-        environment = "DEV" #for future development
+        # functions context variables
+        # fn config app ociapigw-app oci_region us-ashburn-1
+        # fn config app ociapigw-app environment QA
+        oci_region = app_context['oci_region']
+        environment = app_context['environment']
 
         # header values
         access_token = header["token"]
         api_id = header["apiId"]
-        host = header["host"]
+        host = header["host_name"]
         compartmentId = header['apiCompartmentId']
         functionId = header['functionId']
         api_gateway_id = header['apiGatewayId']
@@ -466,7 +507,7 @@ def handler(ctx, data: io.BytesIO = None):
         except(Exception) as ex1:
             jsonData = 'error parsing json payload: ' + str(ex1)
             put_logs_response = logging.put_logs(
-                log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                log_id="ocid1.log.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan",
                 put_logs_details=oci.loggingingestion.models.PutLogsDetails(
                     specversion="EXAMPLE-specversion-Value",
                     log_entry_batches=[
@@ -490,6 +531,8 @@ def handler(ctx, data: io.BytesIO = None):
         rdata = json.dumps({
             "active": True,
             "context": {
+                "environment": environment,
+                "oci_region": oci_region,
                 "api_id": api_id
             }})
 
@@ -502,7 +545,7 @@ def handler(ctx, data: io.BytesIO = None):
     except(Exception) as ex:
         jsonData = 'error parsing json payload: ' + str(ex)
         put_logs_response = logging.put_logs(
-            log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            log_id="ocid1.log.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan",
             put_logs_details=oci.loggingingestion.models.PutLogsDetails(
                 specversion="EXAMPLE-specversion-Value",
                 log_entry_batches=[
