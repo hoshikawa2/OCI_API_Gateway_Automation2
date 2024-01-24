@@ -82,14 +82,14 @@ def creeateOrUpdateDeployment(compartmendId, displayName, validation_deployment_
         deployment_id = gateway["items"][ind]["id"]
     else:
         gateway_id = api_gateway_id
-        deployment_id = 0
+        deployment_id = ""
 
-    if (gateway["items"] != [] and deployment_id > 0):
+    if (gateway["items"] != [] and deployment_id != ""):
         apigateway_client.update_deployment(deployment_id=deployment_id, update_deployment_details=validation_deployment_details)
     else:
         apigateway_client.create_deployment(create_deployment_details=create_deployment_details)
 
-def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gateway_id):
+def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gateway_id, rate_limit):
     config = oci.config.from_file("config")
     logging = oci.loggingingestion.LoggingClient(config)
     apigateway_client = oci.apigateway.DeploymentClient(config)
@@ -110,6 +110,16 @@ def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gate
     else:
         gateway_id = api_gateway_id
         deployment_id = 0
+
+    try:
+        rate_config = rate_limit.split(',')
+        rate_seconds = int(rate_config[0])
+        rate_key = rate_config[1]
+        rate_limiting = oci.apigateway.models.RateLimitingPolicy(
+            rate_in_requests_per_second=rate_seconds,
+            rate_key=rate_key)
+    except:
+        rate_limiting = None
 
     path_prefix = "/"
     routes = [ ]
@@ -184,6 +194,7 @@ def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gate
             display_name=displayName + "-validation",
             specification=oci.apigateway.models.ApiSpecification(
                 request_policies=oci.apigateway.models.ApiSpecificationRequestPolicies(
+                    rate_limiting=rate_limiting,
                     authentication=oci.apigateway.models.CustomAuthenticationPolicy(
                         type="CUSTOM_AUTHENTICATION",
                         function_id=functionId,
@@ -207,6 +218,7 @@ def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gate
             path_prefix= path_prefix + "validation-callback",
             specification=oci.apigateway.models.ApiSpecification(
                 request_policies=oci.apigateway.models.ApiSpecificationRequestPolicies(
+                    rate_limiting=rate_limiting,
                     authentication=oci.apigateway.models.CustomAuthenticationPolicy(
                         type="CUSTOM_AUTHENTICATION",
                         function_id=functionId,
@@ -244,6 +256,7 @@ def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gate
             display_name=displayName,
             specification=oci.apigateway.models.ApiSpecification(
                 request_policies=oci.apigateway.models.ApiSpecificationRequestPolicies(
+                    rate_limiting=rate_limiting,
                     authentication=oci.apigateway.models.CustomAuthenticationPolicy(
                         type="CUSTOM_AUTHENTICATION",
                         function_id=functionId,
@@ -261,6 +274,7 @@ def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gate
             path_prefix= path_prefix,
             specification=oci.apigateway.models.ApiSpecification(
                 request_policies=oci.apigateway.models.ApiSpecificationRequestPolicies(
+                    rate_limiting=rate_limiting,
                     authentication=oci.apigateway.models.CustomAuthenticationPolicy(
                         type="CUSTOM_AUTHENTICATION",
                         function_id=functionId,
@@ -322,7 +336,7 @@ def group_by(payload):
         result_payload.append({"API_NAME": API_NAME, "TYPE": TYPE, "ENVIRONMENT": ENVIRONMENT, "PATH_PREFIX": PATH_PREFIX, "PATH": PATH, "ENDPOINT": ENDPOINT, "METHOD": method_list, "SCHEMA_BODY_VALIDATION": SCHEMA_BODY_VALIDATION})
     return result_payload
 
-def process_api_spec(api_id, compartmentId, environment, swagger, functionId, host, api_gateway_id):
+def process_api_spec(api_id, compartmentId, environment, swagger, functionId, host, api_gateway_id, rate_limit):
     type = "REST"
     config = oci.config.from_file("config")
     apigateway_client = oci.apigateway.ApiGatewayClient(config)
@@ -444,7 +458,7 @@ def process_api_spec(api_id, compartmentId, environment, swagger, functionId, ho
             payload = json.loads(json.dumps(group_by(payload)))
             json_data_list = { each['PATH'] : each for each in payload}.values()
         print(payload)
-        applyAuthApi(compartmentId=compartmentId, displayName=API_NAME, payload=json_data_list, functionId=functionId, host=host, api_gateway_id=api_gateway_id)
+        applyAuthApi(compartmentId=compartmentId, displayName=API_NAME, payload=json_data_list, functionId=functionId, host=host, api_gateway_id=api_gateway_id, rate_limit=rate_limit)
 
     except(Exception) as ex:
         jsonData = 'error parsing json payload: ' + str(ex)
@@ -495,6 +509,7 @@ def handler(ctx, data: io.BytesIO = None):
         compartmentId = header['apiCompartmentId']
         functionId = header['functionId']
         api_gateway_id = header['apiGatewayId']
+        rate_limit = header['rateLimit']
 
         authorization = auth_idcs(access_token, url, options["ClientId"], options["ClientSecret"])
         try:
@@ -526,7 +541,7 @@ def handler(ctx, data: io.BytesIO = None):
             )
 
         # Create API spec
-        process_api_spec(api_id=api_id, compartmentId=compartmentId, environment=environment, swagger=swagger, functionId=functionId, host=host, api_gateway_id=api_gateway_id)
+        process_api_spec(api_id=api_id, compartmentId=compartmentId, environment=environment, swagger=swagger, functionId=functionId, host=host, api_gateway_id=api_gateway_id, rate_limit=rate_limit)
 
         rdata = json.dumps({
             "active": True,

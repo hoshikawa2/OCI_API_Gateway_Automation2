@@ -41,7 +41,8 @@
           "functionId": "request.headers[functionId]",
           "host": "request.host",
           "token": "request.headers[token]",
-          "apiGatewayId": "request.headers[apiGatewayId]"
+          "apiGatewayId": "request.headers[apiGatewayId]",
+          "rateLimit": "request.headers[rateLimit]"
         },
         "token_header": null,
         "token_query_param": null,

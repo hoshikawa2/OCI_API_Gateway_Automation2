@@ -158,7 +158,7 @@ You need to deploy the API (you can see the **deployment** file [applyValidation
 
 ![img_17.png](images/img_17.png)
 
-![img.png](images/img_18d.png)
+![img.png](images/img-18e.png)
 
 ![img_20.png](images/img_20.png)
 
@@ -168,6 +168,7 @@ There are 4 news HEADER parameters:
 - **functionId**: It's your authorization **OCI function** **OCID** mentioned in **authApi** service.
 - **host_name**: It's your **OCI API Gateway** endpoint. You can find this information in the console of your instance.
 - **apiGatewayId**: It's your **OCI API Gateway** deployment **OCID** to deploy your specification
+- **rateLimit**: It's the rate limit configuration for the **OCI API Gateway** deployment. Put in this format seconds,[CLIENT_IP/TOTAL]. Example: 2000,CLIENT_IP (optional)
 
 And you can test with:
 
