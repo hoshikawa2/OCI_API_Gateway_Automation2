@@ -179,6 +179,7 @@ And you can test with:
     --header 'apiCompartmentId: ocid1.compartment.oc1..aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' \
     --header 'functionId: ocid1.fnfunc.oc1.iad.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' \
     --header 'host_name: xxxxxxxxxxxxxxxxxxxxxxx.apigateway.us-ashburn-1.oci.customer-oci.com' \
+    --header 'rateLimit: 2000,CLIENT_IP' \
     --header 'Content-Type: application/json' \
     --data-raw '<YOUR OPENAPI SPEC>'
 
