@@ -86,6 +86,14 @@ You need to deploy the API (you can see the **deployment** file [createApi.json]
 
 ![img_11.png](images/img_11.png)
 
+Finally, click on **Show route response policies** and add a **Header Transformation** with:
+
+    Behaviour=Append
+    Header name=api_id
+    Values=${request.auth[api_id]}
+
+![img.png](images/img_api_id.png)
+
 After your **createApi** deployment, you can use it. You will need an authorization token. If you configured the **IDCS OAuth2**, you can follow these instructions to deploy and obtain your OAuth2 token. [Use OCI API Gateway, Functions and Observability to Validate JSON Content and Monitor API Headers and Body](https://docs.oracle.com/en/learn/validate-json-content-apigw-fn/#introduction)
 
 You will need more 3 parameters:
