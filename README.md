@@ -69,6 +69,14 @@ And this is the **config.json** file for **IDCS** configuration.
 
 ![img.png](images/idcs-config.png)
 
+In the **createApi** and **applyValidationApi**, you can work with OpenAPI and Swagger specifications in **JSON** or **YAML** format. This can be done by 2 methods in the code:
+
+![img.png](images/json_yaml_format.png)
+
+This methods will be used to mantain the specification in **JSON** default format for all codes.
+
+![img_1.png](images/json_yaml_format_1.png)
+
 First, we need to import an OpenAPI specification. The **OCI API Gateway** has a REST service to import and validate the spec. We can do it with an **OCI function createApi** .
 
 ## createApi
