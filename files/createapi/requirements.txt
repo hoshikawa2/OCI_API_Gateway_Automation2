@@ -6,4 +6,4 @@ six
 PyJWT
 py3_lru_cache
 simplejson
-
+PyYAML

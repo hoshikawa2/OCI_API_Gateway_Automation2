@@ -4,6 +4,7 @@ import io
 from fdk import response
 import oci
 import requests
+import yaml
 
 #### IDCS Routines
 #### https://docs.oracle.com/en/learn/apigw-modeldeployment/index.html#introduction
@@ -123,7 +124,7 @@ def process_api_spec(displayName, compartmentId, environment, swagger):
     except(Exception) as ex:
         jsonData = 'error parsing json payload: ' + str(ex)
         put_logs_response = logging.put_logs(
-            log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            log_id="ocid1.log.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan",
             put_logs_details=oci.loggingingestion.models.PutLogsDetails(
                 specversion="EXAMPLE-specversion-Value",
                 log_entry_batches=[
@@ -134,6 +135,22 @@ def process_api_spec(displayName, compartmentId, environment, swagger):
                                 id="ocid1.test.oc1..00000001.EXAMPLE-id-Value")],
                         source="EXAMPLE-source-Value",
                         type="EXAMPLE-type-Value")]))
+
+def is_json(swagger):
+    try:
+        body = json.loads(swagger)
+        return True
+    except:
+        try:
+            yaml_object = yaml.safe_load(swagger) # yaml_object will be a list or a dict
+            s = json.dumps(yaml_object, indent=2)
+            return False
+        except:
+            return False
+
+def convert_json(swagger):
+    yaml_object = yaml.safe_load(swagger) # yaml_object will be a list or a dict
+    return json.dumps(yaml_object, indent=2)
 
 ###
 
@@ -154,9 +171,13 @@ def handler(ctx, data: io.BytesIO = None):
         body = dict(json.loads(data.getvalue().decode('utf-8')).get("data"))["body"]
         # body content
         swagger = str(body)
-        body = json.loads(body)
+        if (is_json(swagger)):
+            body = json.loads(body)
+        else:
+            body = json.loads(convert_json(swagger))
+            swagger = convert_json(swagger)
 
-        environment = "DEV" #for future development
+        environment = "DEV"
 
         # header values
         access_token = header["token"]
@@ -174,17 +195,17 @@ def handler(ctx, data: io.BytesIO = None):
         except(Exception) as ex1:
             jsonData = 'error parsing json payload: ' + str(ex1)
             put_logs_response = logging.put_logs(
-            log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-            put_logs_details=oci.loggingingestion.models.PutLogsDetails(
-                specversion="EXAMPLE-specversion-Value",
-                log_entry_batches=[
-                    oci.loggingingestion.models.LogEntryBatch(
-                        entries=[
-                            oci.loggingingestion.models.LogEntry(
-                                data="error: " + jsonData,
-                                id="ocid1.test.oc1..00000001.EXAMPLE-id-Value")],
-                        source="EXAMPLE-source-Value",
-                        type="EXAMPLE-type-Value")]))
+                log_id="ocid1.log.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan",
+                put_logs_details=oci.loggingingestion.models.PutLogsDetails(
+                    specversion="EXAMPLE-specversion-Value",
+                    log_entry_batches=[
+                        oci.loggingingestion.models.LogEntryBatch(
+                            entries=[
+                                oci.loggingingestion.models.LogEntry(
+                                    data="error: " + jsonData,
+                                    id="ocid1.test.oc1..00000001.EXAMPLE-id-Value")],
+                            source="EXAMPLE-source-Value",
+                            type="EXAMPLE-type-Value")]))
 
             return response.Response(
                 ctx,
@@ -196,23 +217,37 @@ def handler(ctx, data: io.BytesIO = None):
         api_id = process_api_spec(displayName, compartmentId, environment, swagger)
 
         rdata = json.dumps({
-                "active": True,
-                "context": {
-                    "environment": environment,
-                    "display_name": displayName,
-                    "api_id": json.dumps(api_id)
-                }})
+            "active": True,
+            "context": {
+                "environment": environment,
+                "display_name": displayName,
+                "api_id": json.dumps(api_id)
+            }})
+
+        # put_logs_response = logging.put_logs(
+        #     log_id="ocid1.log.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan",
+        #     put_logs_details=oci.loggingingestion.models.PutLogsDetails(
+        #         specversion="EXAMPLE-specversion-Value",
+        #         log_entry_batches=[
+        #             oci.loggingingestion.models.LogEntryBatch(
+        #                 entries=[
+        #                     oci.loggingingestion.models.LogEntry(
+        #                         data="request payload: " + json.dumps(header),
+        #                         id="ocid1.test.oc1..00000001.EXAMPLE-id-Value-1")],
+        #                 source="EXAMPLE-source-Value",
+        #                 type="EXAMPLE-type-Value")]))
+
 
         return response.Response(
-                ctx, response_data=rdata,
-                status_code=200,
-                headers={"Content-Type": "application/json", "data": rdata}
+            ctx, response_data=rdata,
+            status_code=200,
+            headers={"Content-Type": "application/json", "data": rdata}
         )
 
     except(Exception) as ex:
         jsonData = 'error parsing json payload: ' + str(ex)
         put_logs_response = logging.put_logs(
-            log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            log_id="ocid1.log.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan",
             put_logs_details=oci.loggingingestion.models.PutLogsDetails(
                 specversion="EXAMPLE-specversion-Value",
                 log_entry_batches=[

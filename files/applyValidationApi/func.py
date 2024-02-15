@@ -6,6 +6,7 @@ import oci
 import requests
 import time
 from itertools import groupby
+import yaml
 
 #### IDCS Routines
 #### https://docs.oracle.com/en/learn/apigw-modeldeployment/index.html#introduction
@@ -475,6 +476,23 @@ def process_api_spec(api_id, compartmentId, environment, swagger, functionId, ho
                         source="EXAMPLE-source-Value",
                         type="EXAMPLE-type-Value")]))
 
+def is_json(swagger):
+    try:
+        body = json.loads(swagger)
+        return True
+    except:
+        try:
+            yaml_object = yaml.safe_load(swagger) # yaml_object will be a list or a dict
+            s = json.dumps(yaml_object, indent=2)
+            return False
+        except:
+            return False
+
+def convert_json(swagger):
+    yaml_object = yaml.safe_load(swagger) # yaml_object will be a list or a dict
+    return json.dumps(yaml_object, indent=2)
+
+
 ###
 
 def handler(ctx, data: io.BytesIO = None):
@@ -494,13 +512,13 @@ def handler(ctx, data: io.BytesIO = None):
         body = dict(json.loads(data.getvalue().decode('utf-8')).get("data"))["body"]
         # body content
         swagger = str(body)
-        body = json.loads(body)
+        if (is_json(swagger)):
+            body = json.loads(body)
+        else:
+            body = json.loads(convert_json(swagger))
+            swagger = convert_json(swagger)
 
-        # functions context variables
-        # fn config app ociapigw-app oci_region us-ashburn-1
-        # fn config app ociapigw-app environment QA
-        oci_region = app_context['oci_region']
-        environment = app_context['environment']
+        environment = "DEV"
 
         # header values
         access_token = header["token"]
@@ -547,7 +565,6 @@ def handler(ctx, data: io.BytesIO = None):
             "active": True,
             "context": {
                 "environment": environment,
-                "oci_region": oci_region,
                 "api_id": api_id
             }})
 
