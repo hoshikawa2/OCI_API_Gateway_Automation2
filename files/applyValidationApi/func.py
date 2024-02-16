@@ -7,6 +7,7 @@ import requests
 import time
 from itertools import groupby
 import yaml
+import datetime
 
 #### IDCS Routines
 #### https://docs.oracle.com/en/learn/apigw-modeldeployment/index.html#introduction
@@ -131,7 +132,7 @@ def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gate
         if (item["SCHEMA_BODY_VALIDATION"] != ""):
             callback_url = ("https://" + host + item["PATH_PREFIX"] + "validation-callback" + item["PATH"]).replace("{", "${request.path[").replace("}", "]}")
             put_logs_response = logging.put_logs(
-                log_id="ocid1.log.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan",
+                log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
                 put_logs_details=oci.loggingingestion.models.PutLogsDetails(
                     specversion="EXAMPLE-specversion-Value",
                     log_entry_batches=[
@@ -293,7 +294,8 @@ def accMethods(routes, path, status):
     for spec in routes:
         if (find_path(spec["path"]) == path and spec["backend"]["status"] == status):
             for method in spec["methods"]:
-                METHOD = (METHOD + " " + method).lstrip().upper()
+                if (method not in METHOD):
+                    METHOD = (METHOD + " " + method).lstrip().upper()
     return METHOD
 
 def accMethods_v2(routes, path, status):
@@ -301,7 +303,8 @@ def accMethods_v2(routes, path, status):
     for spec in routes:
         if (spec["path"] == path and spec["backend"]["status"] == status):
             for method in spec["methods"]:
-                METHOD = (METHOD + " " + method).lstrip().upper()
+                if (method not in METHOD):
+                    METHOD = (METHOD + " " + method).lstrip().upper()
     return METHOD
 
 def check_endpoint(endpoint):
@@ -336,6 +339,39 @@ def group_by(payload):
             SCHEMA_BODY_VALIDATION = item["SCHEMA_BODY_VALIDATION"]
         result_payload.append({"API_NAME": API_NAME, "TYPE": TYPE, "ENVIRONMENT": ENVIRONMENT, "PATH_PREFIX": PATH_PREFIX, "PATH": PATH, "ENDPOINT": ENDPOINT, "METHOD": method_list, "SCHEMA_BODY_VALIDATION": SCHEMA_BODY_VALIDATION})
     return result_payload
+
+def verify_path(json_data_list):
+    list_final = []
+    for item in json_data_list:
+        if (item["PATH"] == ""):
+            for item2 in json_data_list:
+                if (item2["PATH"] == ""):
+                    list_final.append({
+                        'API_NAME': item2["API_NAME"],
+                        'TYPE': item2["TYPE"],
+                        'ENVIRONMENT': item2["ENVIRONMENT"],
+                        'METHOD': item2["METHOD"],
+                        'PATH_PREFIX': "/" + item2["API_NAME"],
+                        'PATH': item2["PATH_PREFIX"],
+                        'ENDPOINT': item2["ENDPOINT"],
+                        'SCHEMA_BODY_VALIDATION': item2["SCHEMA_BODY_VALIDATION"],
+                        'CONTENT_TYPE': item2["CONTENT_TYPE"]
+                    })
+                else:
+                    list_final.append({
+                        'API_NAME': item2["API_NAME"],
+                        'TYPE': item2["TYPE"],
+                        'ENVIRONMENT': item2["ENVIRONMENT"],
+                        'METHOD': item2["METHOD"],
+                        'PATH_PREFIX': "/" + item2["API_NAME"],
+                        'PATH': item2["PATH_PREFIX"] + item2["PATH"],
+                        'ENDPOINT': item2["ENDPOINT"],
+                        'SCHEMA_BODY_VALIDATION': item2["SCHEMA_BODY_VALIDATION"],
+                        'CONTENT_TYPE': item2["CONTENT_TYPE"]
+                    })
+
+            return list_final
+    return json_data_list
 
 def process_api_spec(api_id, compartmentId, environment, swagger, functionId, host, api_gateway_id, rate_limit):
     type = "REST"
@@ -417,7 +453,7 @@ def process_api_spec(api_id, compartmentId, environment, swagger, functionId, ho
             })
             print(API_NAME, TYPE, ENVIRONMENT, METHOD, PATH_PREFIX, PATH, ENDPOINT, SCHEMA_BODY_VALIDATION, CONTENT_TYPE)
             put_logs_response = logging.put_logs(
-                log_id="ocid1.log.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan",
+                log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
                 put_logs_details=oci.loggingingestion.models.PutLogsDetails(
                     specversion="EXAMPLE-specversion-Value",
                     log_entry_batches=[
@@ -440,10 +476,11 @@ def process_api_spec(api_id, compartmentId, environment, swagger, functionId, ho
                             type="EXAMPLE-type-Value")]))
 
 
+        json_data_list = verify_path(json_data_list)
         payload = json.dumps(json_data_list)
         json_data_list = { each['PATH'] : each for each in json_data_list}.values()
         put_logs_response = logging.put_logs(
-            log_id="ocid1.log.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan",
+            log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
             put_logs_details=oci.loggingingestion.models.PutLogsDetails(
                 specversion="EXAMPLE-specversion-Value",
                 log_entry_batches=[
@@ -464,7 +501,7 @@ def process_api_spec(api_id, compartmentId, environment, swagger, functionId, ho
     except(Exception) as ex:
         jsonData = 'error parsing json payload: ' + str(ex)
         put_logs_response = logging.put_logs(
-            log_id="ocid1.log.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan",
+            log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
             put_logs_details=oci.loggingingestion.models.PutLogsDetails(
                 specversion="EXAMPLE-specversion-Value",
                 log_entry_batches=[
@@ -476,6 +513,10 @@ def process_api_spec(api_id, compartmentId, environment, swagger, functionId, ho
                         source="EXAMPLE-source-Value",
                         type="EXAMPLE-type-Value")]))
 
+def DateEncoder(obj):
+    if isinstance(obj, datetime.datetime):
+        return obj.strftime('%Y-%m-%d')
+
 def is_json(swagger):
     try:
         body = json.loads(swagger)
@@ -483,14 +524,14 @@ def is_json(swagger):
     except:
         try:
             yaml_object = yaml.safe_load(swagger) # yaml_object will be a list or a dict
-            s = json.dumps(yaml_object, indent=2)
+            s = json.dumps(yaml_object, indent=2, default=DateEncoder)
             return False
         except:
             return False
 
 def convert_json(swagger):
     yaml_object = yaml.safe_load(swagger) # yaml_object will be a list or a dict
-    return json.dumps(yaml_object, indent=2)
+    return json.dumps(yaml_object, indent=2, default=DateEncoder)
 
 
 ###
@@ -540,7 +581,7 @@ def handler(ctx, data: io.BytesIO = None):
         except(Exception) as ex1:
             jsonData = 'error parsing json payload: ' + str(ex1)
             put_logs_response = logging.put_logs(
-                log_id="ocid1.log.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan",
+                log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
                 put_logs_details=oci.loggingingestion.models.PutLogsDetails(
                     specversion="EXAMPLE-specversion-Value",
                     log_entry_batches=[
@@ -577,7 +618,7 @@ def handler(ctx, data: io.BytesIO = None):
     except(Exception) as ex:
         jsonData = 'error parsing json payload: ' + str(ex)
         put_logs_response = logging.put_logs(
-            log_id="ocid1.log.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan",
+            log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
             put_logs_details=oci.loggingingestion.models.PutLogsDetails(
                 specversion="EXAMPLE-specversion-Value",
                 log_entry_batches=[
@@ -596,3 +637,4 @@ def handler(ctx, data: io.BytesIO = None):
         status_code=401,
         response_data=json.dumps({"active": False, "wwwAuthenticate": jsonData})
     )
+

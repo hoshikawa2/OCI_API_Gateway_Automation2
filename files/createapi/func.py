@@ -5,6 +5,7 @@ from fdk import response
 import oci
 import requests
 import yaml
+import datetime
 
 #### IDCS Routines
 #### https://docs.oracle.com/en/learn/apigw-modeldeployment/index.html#introduction
@@ -124,7 +125,7 @@ def process_api_spec(displayName, compartmentId, environment, swagger):
     except(Exception) as ex:
         jsonData = 'error parsing json payload: ' + str(ex)
         put_logs_response = logging.put_logs(
-            log_id="ocid1.log.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan",
+            log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
             put_logs_details=oci.loggingingestion.models.PutLogsDetails(
                 specversion="EXAMPLE-specversion-Value",
                 log_entry_batches=[
@@ -136,6 +137,10 @@ def process_api_spec(displayName, compartmentId, environment, swagger):
                         source="EXAMPLE-source-Value",
                         type="EXAMPLE-type-Value")]))
 
+def DateEncoder(obj):
+    if isinstance(obj, datetime.datetime):
+        return obj.strftime('%Y-%m-%d')
+
 def is_json(swagger):
     try:
         body = json.loads(swagger)
@@ -143,14 +148,14 @@ def is_json(swagger):
     except:
         try:
             yaml_object = yaml.safe_load(swagger) # yaml_object will be a list or a dict
-            s = json.dumps(yaml_object, indent=2)
+            s = json.dumps(yaml_object, indent=2, default=DateEncoder)
             return False
         except:
             return False
 
 def convert_json(swagger):
     yaml_object = yaml.safe_load(swagger) # yaml_object will be a list or a dict
-    return json.dumps(yaml_object, indent=2)
+    return json.dumps(yaml_object, indent=2, default=DateEncoder)
 
 ###
 
@@ -195,7 +200,7 @@ def handler(ctx, data: io.BytesIO = None):
         except(Exception) as ex1:
             jsonData = 'error parsing json payload: ' + str(ex1)
             put_logs_response = logging.put_logs(
-                log_id="ocid1.log.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan",
+                log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
                 put_logs_details=oci.loggingingestion.models.PutLogsDetails(
                     specversion="EXAMPLE-specversion-Value",
                     log_entry_batches=[
@@ -225,7 +230,7 @@ def handler(ctx, data: io.BytesIO = None):
             }})
 
         # put_logs_response = logging.put_logs(
-        #     log_id="ocid1.log.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan",
+        #     log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
         #     put_logs_details=oci.loggingingestion.models.PutLogsDetails(
         #         specversion="EXAMPLE-specversion-Value",
         #         log_entry_batches=[
@@ -247,7 +252,7 @@ def handler(ctx, data: io.BytesIO = None):
     except(Exception) as ex:
         jsonData = 'error parsing json payload: ' + str(ex)
         put_logs_response = logging.put_logs(
-            log_id="ocid1.log.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan",
+            log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
             put_logs_details=oci.loggingingestion.models.PutLogsDetails(
                 specversion="EXAMPLE-specversion-Value",
                 log_entry_batches=[
