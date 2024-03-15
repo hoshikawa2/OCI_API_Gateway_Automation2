@@ -370,8 +370,8 @@
                                         'TYPE': item2["TYPE"],
                                         'ENVIRONMENT': item2["ENVIRONMENT"],
                                         'METHOD': item2["METHOD"],
-                                        'PATH_PREFIX': "/" + item2["API_NAME"],
-                                        'PATH': item2["PATH_PREFIX"] + item2["PATH"],
+                                        'PATH_PREFIX': item2["PATH_PREFIX"],
+                                        'PATH': item2["PATH"],
                                         'ENDPOINT': item2["ENDPOINT"],
                                         'SCHEMA_BODY_VALIDATION': item2["SCHEMA_BODY_VALIDATION"],
                                         'CONTENT_TYPE': item2["CONTENT_TYPE"]
