@@ -48,6 +48,51 @@ def find_base_path(strPath):
         base_path = "/" + base_path
     return base_path
 
+def has_path_endpoint(endPoint):
+    endPointAux = endPoint.replace("//", "#")
+    endPointSplited = endPointAux.split('/')
+    if (len(endPointSplited) > 1):
+        return True
+    else:
+        return False
+
+def find_base_pathendpoint(endPoint, strPath):
+    base_path = strPath.split('/')[1]
+    if (len(base_path) == 0 and has_path_endpoint(endPoint)):
+        endPointAux = endPoint.replace("//", "#")
+        endPointSplited = endPointAux.split('/')
+        if (len(endPointSplited) > 1):
+            endPointSplitedStr = endPointSplited[1]
+            if (endPointSplitedStr != None):
+                base_path = "/" + endPointSplitedStr
+            else:
+                base_path = strPath
+        else:
+            base_path = strPath
+    else:
+        endPointAux = endPoint.replace("//", "#")
+        endPointSplited = endPointAux.split('/')
+        if (len(endPointSplited) > 1):
+            endPointSplitedStr = endPointSplited[1]
+            if (endPointSplitedStr != None):
+                base_path = "/" + endPointSplitedStr
+                endPoint = endPointSplited[0].replace("#", "//")
+            else:
+                base_path = "/" + base_path
+        else:
+            base_path = "/" + base_path
+    return base_path
+
+
+def find_base_endpoint(endPoint):
+    endPointAux = endPoint.replace("//", "#")
+    endPointSplited = endPointAux.split('/')
+    if (len(endPointSplited) > 1):
+        endPointSplitedStr = endPointSplited[1]
+        if (endPointSplitedStr != None):
+            endPoint = endPointSplited[0].replace("#", "//")
+    return endPoint
+
 def find_path(strPath):
     base_path = strPath.split('/')
     if (len(base_path) == 0):
@@ -358,7 +403,7 @@ def verify_path(json_data_list):
                         'TYPE': item2["TYPE"],
                         'ENVIRONMENT': item2["ENVIRONMENT"],
                         'METHOD': item2["METHOD"],
-                        'PATH_PREFIX': "/" + item2["API_NAME"],
+                        'PATH_PREFIX': "/",
                         'PATH': item2["PATH_PREFIX"],
                         'ENDPOINT': item2["ENDPOINT"],
                         'SCHEMA_BODY_VALIDATION': item2["SCHEMA_BODY_VALIDATION"],
@@ -409,15 +454,21 @@ def process_api_spec(api_id, compartmentId, environment, swagger, functionId, ho
 
         json_data_list = []
 
+        endPointOrigin = endPoint
         for spec in api_spec["routes"]:
             status = spec["backend"]["status"]
+            specPath = spec["path"]
+            if (has_path_endpoint(endPointOrigin)):
+                endPoint = find_base_endpoint(endPointOrigin)
+                specPath = (find_base_pathendpoint(endPointOrigin, specPath) + spec["path"]).replace("//", "/")
+
             if (version == "3"):
-                fullEndpoint = (endPoint + find_base_path(spec["path"]) + find_path(spec["path"])).replace("{", "${request.path[").replace("}", "]}")
-                FULL_PATH = spec["path"]
+                fullEndpoint = (endPoint + find_base_path(specPath) + find_path(specPath)).replace("{", "${request.path[").replace("}", "]}")
+                FULL_PATH = specPath
                 ENDPOINT = fullEndpoint
-                PATH = find_path(spec["path"])
-                PATH_PREFIX = find_base_path(spec["path"])
-                METHOD = accMethods(api_spec["routes"], PATH, status)
+                PATH = find_path(specPath)
+                PATH_PREFIX = find_base_path(specPath)
+                METHOD = accMethods(api_spec["routes"], find_path(spec["path"]), status)
             else:
                 schemes = ""
                 try:
@@ -650,4 +701,3 @@ def handler(ctx, data: io.BytesIO = None):
         status_code=401,
         response_data=json.dumps({"active": False, "wwwAuthenticate": jsonData})
     )
-
