@@ -56,15 +56,24 @@ def has_path_endpoint(endPoint):
     else:
         return False
 
+def concatSplited(endPointSplited):
+    count = 0
+    endPointStr = ""
+    for item in endPointSplited:
+        if (count > 0):
+            endPointStr = endPointStr + "/" + item
+        count = count + 1
+    return endPointStr
+
 def find_base_pathendpoint(endPoint, strPath):
     base_path = strPath.split('/')[1]
     if (len(base_path) == 0 and has_path_endpoint(endPoint)):
         endPointAux = endPoint.replace("//", "#")
         endPointSplited = endPointAux.split('/')
         if (len(endPointSplited) > 1):
-            endPointSplitedStr = endPointSplited[1]
+            endPointSplitedStr = concatSplited(endPointSplited)
             if (endPointSplitedStr != None):
-                base_path = "/" + endPointSplitedStr
+                base_path = endPointSplitedStr
             else:
                 base_path = strPath
         else:
@@ -73,9 +82,9 @@ def find_base_pathendpoint(endPoint, strPath):
         endPointAux = endPoint.replace("//", "#")
         endPointSplited = endPointAux.split('/')
         if (len(endPointSplited) > 1):
-            endPointSplitedStr = endPointSplited[1]
+            endPointSplitedStr = concatSplited(endPointSplited)
             if (endPointSplitedStr != None):
-                base_path = "/" + endPointSplitedStr
+                base_path = endPointSplitedStr
                 endPoint = endPointSplited[0].replace("#", "//")
             else:
                 base_path = "/" + base_path
