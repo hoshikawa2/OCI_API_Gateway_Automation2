@@ -467,7 +467,7 @@ def process_api_spec(api_id, compartmentId, environment, swagger, functionId, ho
         for spec in api_spec["routes"]:
             status = spec["backend"]["status"]
             specPath = spec["path"]
-            if (has_path_endpoint(endPointOrigin)):
+            if (has_path_endpoint(endPointOrigin) and version == "3"):
                 endPoint = find_base_endpoint(endPointOrigin)
                 specPath = (find_base_pathendpoint(endPointOrigin, specPath) + spec["path"]).replace("//", "/")
 
