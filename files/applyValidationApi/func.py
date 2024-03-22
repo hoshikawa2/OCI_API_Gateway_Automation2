@@ -467,17 +467,24 @@ def process_api_spec(api_id, compartmentId, environment, swagger, functionId, ho
         for spec in api_spec["routes"]:
             status = spec["backend"]["status"]
             specPath = spec["path"]
-            if (has_path_endpoint(endPointOrigin) and version == "3"):
-                endPoint = find_base_endpoint(endPointOrigin)
-                specPath = (find_base_pathendpoint(endPointOrigin, specPath) + spec["path"]).replace("//", "/")
 
             if (version == "3"):
-                fullEndpoint = (endPoint + find_base_path(specPath) + find_path(specPath)).replace("{", "${request.path[").replace("}", "]}")
-                FULL_PATH = specPath
-                ENDPOINT = fullEndpoint
-                PATH = find_path(specPath)
-                PATH_PREFIX = find_base_path(specPath)
-                METHOD = accMethods(api_spec["routes"], find_path(spec["path"]), status)
+                if (has_path_endpoint(endPointOrigin)):
+                    endPoint = find_base_endpoint(endPointOrigin)
+                    specPath = (find_base_pathendpoint(endPointOrigin, specPath)).replace("//", "/")
+                    fullEndpoint = (endPoint + specPath + spec["path"]).replace("{", "${request.path[").replace("}", "]}")
+                    FULL_PATH = specPath
+                    ENDPOINT = fullEndpoint
+                    PATH = spec["path"]
+                    PATH_PREFIX = specPath
+                    METHOD = accMethods(api_spec["routes"], find_path(spec["path"]), status)
+                else:
+                    fullEndpoint = (endPoint + find_base_path(specPath) + find_path(specPath)).replace("{", "${request.path[").replace("}", "]}")
+                    FULL_PATH = specPath
+                    ENDPOINT = fullEndpoint
+                    PATH = find_path(specPath)
+                    PATH_PREFIX = find_base_path(specPath)
+                    METHOD = accMethods(api_spec["routes"], find_path(spec["path"]), status)
             else:
                 schemes = ""
                 try:
