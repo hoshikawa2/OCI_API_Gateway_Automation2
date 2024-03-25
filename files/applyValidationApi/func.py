@@ -361,6 +361,15 @@ def accMethods_v2(routes, path, status):
                     METHOD = (METHOD + " " + method).lstrip().upper()
     return METHOD
 
+def accMethods_v3(routes, path, status):
+    METHOD = ""
+    for spec in routes:
+        if (spec["path"] == path and spec["backend"]["status"] == status):
+            for method in spec["methods"]:
+                if (method not in METHOD):
+                    METHOD = (METHOD + " " + method).lstrip().upper()
+    return METHOD
+
 def check_endpoint(schemes, endpoint):
     if (schemes == ""):
         if (endpoint.find("http://") == -1 and endpoint.find("https://") == -1):
@@ -477,7 +486,7 @@ def process_api_spec(api_id, compartmentId, environment, swagger, functionId, ho
                     ENDPOINT = fullEndpoint
                     PATH = spec["path"]
                     PATH_PREFIX = specPath
-                    METHOD = accMethods(api_spec["routes"], find_path(spec["path"]), status)
+                    METHOD = accMethods_v3(api_spec["routes"], spec["path"], status)
                 else:
                     fullEndpoint = (endPoint + find_base_path(specPath) + find_path(specPath)).replace("{", "${request.path[").replace("}", "]}")
                     FULL_PATH = specPath
@@ -572,9 +581,10 @@ def process_api_spec(api_id, compartmentId, environment, swagger, functionId, ho
                         source="EXAMPLE-source-Value",
                         type="EXAMPLE-type-Value")]))
 
-        if (version == "2"):
-            payload = json.loads(json.dumps(group_by(payload)))
-            json_data_list = { each['PATH'] : each for each in payload}.values()
+        # if (version == "2"):
+        #     payload = json.loads(json.dumps(group_by(payload)))
+        #     json_data_list = { each['PATH'] : each for each in payload}.values()
+        payload = json.loads(json.dumps(group_by(payload)))
         print(payload)
         applyAuthApi(compartmentId=compartmentId, displayName=API_NAME, payload=json_data_list, functionId=functionId, host=host, api_gateway_id=api_gateway_id, rate_limit=rate_limit)
 
