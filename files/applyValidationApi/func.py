@@ -586,7 +586,7 @@ def process_api_spec(api_id, compartmentId, environment, swagger, functionId, ho
         #     json_data_list = { each['PATH'] : each for each in payload}.values()
         payload = json.loads(json.dumps(group_by(payload)))
         print(payload)
-        applyAuthApi(compartmentId=compartmentId, displayName=API_NAME, payload=json_data_list, functionId=functionId, host=host, api_gateway_id=api_gateway_id, rate_limit=rate_limit)
+        applyAuthApi(compartmentId=compartmentId, displayName=API_NAME, payload=payload, functionId=functionId, host=host, api_gateway_id=api_gateway_id, rate_limit=rate_limit)
 
     except(Exception) as ex:
         jsonData = 'error parsing json payload: ' + str(ex)
