@@ -13,11 +13,11 @@ import datetime
 #
 # Método: process_api_spec()
 # displayName = "qrcode"
-# compartmentId = "ocid1.compartment.oc1..aaaaaaaaqom2belitvh5ubr342rgzyeycvyg3zt6b4i4owmkzpnpwft37rga"
+# compartmentId = "ocid1.compartment.oc1..aaaaaaaaqomaaaaaaaaqomaaaaaaaaqomaaaaaaaaqomaaaaaaaaqomaaaaaaaaqom"
 # config = oci.config.from_file(profile_name='DEFAULT')
 #
 # Método: getSpec()
-# text_file = open("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-15/qrcode.yaml", "r")
+# text_file = open("/Teste 2024-03-15/teste1.yaml", "r")
 
 def migrate_to_apigw(payload, url, clientID, secretID):
     auth = clientID + ":" + secretID
@@ -246,7 +246,7 @@ def convert_json(swagger):
 
 def process_api_spec():
     # displayName = "EXEMPLO"
-    compartmentId = "ocid1.compartment.oc1..aaaaaaaaqom2belitvh5ubr342rgzyeycvyg3zt6b4i4owmkzpnpwft37rga"
+    compartmentId = "ocid1.compartment.oc1..aaaaaaaaqomaaaaaaaaqomaaaaaaaaqomaaaaaaaaqomaaaaaaaaqomaaaaaaaaqom"
     environment = "QA"
     type = "REST"
     rate_limit = "2500,CLIENT_IP"
@@ -296,39 +296,39 @@ def process_api_spec():
     # -----------------------------------------------------------------
 
     arquivo = []
-    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Testes 2024-03-11/1.0.0-rc2_rcc-interop-agenda_modificado.json")
-    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Testes 2024-03-11/caso1.yaml")
-    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Testes 2024-03-11/caso2.yaml")
-    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-15/caso2024-03-15.yaml")
-    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-15/qrcode.yaml")
-    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-18/1.0.0-rc1_cob 1.yaml")
-    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-18/1.0.0-rc1_cobv.yaml")
-    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-18/1.0.0-rc1_loc.yaml")
-    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-18/1.0.0-rc1_lotecobv.yaml")
-    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-18/1.0.0-rc1_pix.yaml")
-    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-18/1.0.0-rc1_webhook.yaml")
-    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-20/1.0.0-rc8_cprs.json")
-    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-21/1.0.0-rc1_cob 1.yaml")
-    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-21/1.0.0-rc2_rcc-interop-agenda.json")
-    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-22/1.0.0-rc8_cprs.json")
-    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-25/Banco B3/1.0.0-rc1_cob.yaml")
+    arquivo.append("/Teste 2024-03-15/teste1.yaml")
+    arquivo.append("/Testes 2024-03-11/teste2.json")
+    arquivo.append("/Testes 2024-03-11/teste3.yaml")
+    arquivo.append("/Testes 2024-03-11/teste4.yaml")
+    arquivo.append("/Teste 2024-03-15/teste5.yaml")
+    arquivo.append("/Teste 2024-03-18/teste6.yaml")
+    arquivo.append("/Teste 2024-03-18/teste7.yaml")
+    arquivo.append("/Teste 2024-03-18/teste8.yaml")
+    arquivo.append("/Teste 2024-03-18/teste9.yaml")
+    arquivo.append("/Teste 2024-03-18/teste10.yaml")
+    arquivo.append("/Teste 2024-03-18/teste11.yaml")
+    arquivo.append("/Teste 2024-03-20/teste12.json")
+    arquivo.append("/Teste 2024-03-21/teste13.yaml")
+    arquivo.append("/Teste 2024-03-21/teste14.json")
+    arquivo.append("/Teste 2024-03-22/teste15.json")
+    arquivo.append("/Teste 2024-03-25/teste16.yaml")
     display = []
-    display.append("Interoperabilidades-Agenda")
-    display.append("caso-1")
-    display.append("caso-2")
-    display.append("caso2024-03-15")
-    display.append("qrcode")
-    display.append("cob")
-    display.append("cobv")
-    display.append("loc")
-    display.append("lotecobv")
-    display.append("pix")
-    display.append("webhook")
-    display.append("cprs")
-    display.append("cob1")
-    display.append("rcc-interop-agenda")
-    display.append("Rural")
-    display.append("cob")
+    display.append("caso1")
+    display.append("caso2")
+    display.append("caso3")
+    display.append("caso4")
+    display.append("caso5")
+    display.append("caso6")
+    display.append("caso7")
+    display.append("caso8")
+    display.append("caso9")
+    display.append("caso10")
+    display.append("caso11")
+    display.append("caso12")
+    display.append("caso13")
+    display.append("caso14")
+    display.append("caso15")
+    display.append("caso16")
 
     idxArquivo = 0
 
@@ -451,7 +451,7 @@ def process_api_spec():
             #     #json_data_list = { each['PATH'] : each for each in payload}.values()
             payload = json.loads(json.dumps(group_by(payload)))
             print(payload)
-            # migrate_to_apigw(payload, "https://oic-hoshikawa2-idcci5ks1puo-ia.integration.ocp.oraclecloud.com:443/ic/api/integration/v1/flows/rest/MIGRATE_TO_APIGW/1.0/convert", "OIC_SERVICE_USER_BASICAUTH", "e7ae6069-e471-496e-916d-5dc2ae3edac0")
+            # migrate_to_apigw(payload, "https://teste.integration.ocp.oraclecloud.com:443/ic/api/integration/v1/flows/rest/MIGRATE_TO_APIGW/1.0/convert", "OIC_SERVICE_USER_BASICAUTH", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
 
             c = 0
             idxArquivo = idxArquivo + 1
