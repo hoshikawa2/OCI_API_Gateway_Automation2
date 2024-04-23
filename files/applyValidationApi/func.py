@@ -258,8 +258,9 @@ def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gate
                         parameters={
                             'token': 'request.headers[token]',
                             'body': 'request.body',
-                            'body_schema_validation': 'request.headers[body_schema_validation]'},
-                        cache_key=["token"],
+                            'body_schema_validation': 'request.headers[body_schema_validation]',
+                            'opc-request-id': 'request.headers[opc-request-id]'},
+                        cache_key=["token", "opc-request-id"],
                         validation_failure_policy=oci.apigateway.models.ModifyResponseValidationFailurePolicy(
                             type="MODIFY_RESPONSE",
                             response_code="401",
@@ -282,8 +283,9 @@ def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gate
                         parameters={
                             'token': 'request.headers[token]',
                             'body': 'request.body',
-                            'body_schema_validation': 'request.headers[body_schema_validation]'},
-                        cache_key=["token"],
+                            'body_schema_validation': 'request.headers[body_schema_validation]',
+                            'opc-request-id': 'request.headers[opc-request-id]'},
+                        cache_key=["token", "opc-request-id"],
                         validation_failure_policy=oci.apigateway.models.ModifyResponseValidationFailurePolicy(
                             type="MODIFY_RESPONSE",
                             response_code="401",
@@ -319,8 +321,9 @@ def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gate
                         is_anonymous_access_allowed=False,
                         parameters={
                             'token': 'request.headers[token]',
-                            'body': 'request.body'},
-                        cache_key=["token"])),
+                            'body': 'request.body',
+                            'opc-request-id': 'request.headers[opc-request-id]'},
+                        cache_key=["token", "opc-request-id"])),
                 routes=routes))
 
         create_deployment_details=oci.apigateway.models.CreateDeploymentDetails(
@@ -337,8 +340,9 @@ def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gate
                         is_anonymous_access_allowed=False,
                         parameters={
                             'token': 'request.headers[token]',
-                            'body': 'request.body'},
-                        cache_key=["token"])),
+                            'body': 'request.body',
+                            'opc-request-id': 'request.headers[opc-request-id]'},
+                        cache_key=["token", "opc-request-id"])),
                 routes=routes))
         creeateOrUpdateDeployment(compartmendId=compartmentId, displayName=displayName, validation_deployment_details=validation_deployment_details, create_deployment_details=create_deployment_details, api_gateway_id=api_gateway_id)
 
