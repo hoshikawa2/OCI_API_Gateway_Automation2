@@ -123,19 +123,7 @@ def process_api_spec(displayName, compartmentId, environment, swagger):
         return api_id
 
     except(Exception) as ex:
-        jsonData = 'error parsing json payload: ' + str(ex)
-        put_logs_response = logging.put_logs(
-            log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-            put_logs_details=oci.loggingingestion.models.PutLogsDetails(
-                specversion="EXAMPLE-specversion-Value",
-                log_entry_batches=[
-                    oci.loggingingestion.models.LogEntryBatch(
-                        entries=[
-                            oci.loggingingestion.models.LogEntry(
-                                data="error: " + jsonData,
-                                id="ocid1.test.oc1..00000001.EXAMPLE-id-Value")],
-                        source="EXAMPLE-source-Value",
-                        type="EXAMPLE-type-Value")]))
+        raise
 
 def DateEncoder(obj):
     if isinstance(obj, datetime.datetime):
