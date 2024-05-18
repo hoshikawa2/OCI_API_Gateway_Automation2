@@ -75,44 +75,43 @@ def handler(ctx, data: io.BytesIO = None):
         # header values
         access_token = header["token"]
 
-        if (body_schema_validation == None):
-            authorization = auth_idcs(access_token, url, ClientId, ClientSecret)
-            try:
-                if (authorization.json().get("active") != True):
-                    return response.Response(
-                        ctx,
-                        status_code=401,
-                        response_data=json.dumps({"active": False, "wwwAuthenticate": jsonData})
-                    )
-            except(Exception) as ex1:
-                jsonData = 'error parsing json payload: ' + str(ex1)
-                put_logs_response = logging.put_logs(
-                    log_id="ocid1.log.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan",
-                    put_logs_details=oci.loggingingestion.models.PutLogsDetails(
-                        specversion="EXAMPLE-specversion-Value",
-                        log_entry_batches=[
-                            oci.loggingingestion.models.LogEntryBatch(
-                                entries=[
-                                    oci.loggingingestion.models.LogEntry(
-                                        data="error(a): " + jsonData,
-                                        id="ocid1.test.oc1..00000001.EXAMPLE-id-Value")],
-                                source="EXAMPLE-source-Value",
-                                type="EXAMPLE-type-Value")]))
-                rdata = json.dumps({
-                    "active": False,
-                    "context": {
-                        "status_code": 401,
-                        "message": "Unauthorized",
-                        "body": body,
-                        "body_schema_validation": json.dumps(body_schema_validation),
-                        "error": str(ex1)
-                    }})
-
+        authorization = auth_idcs(access_token, url, ClientId, ClientSecret)
+        try:
+            if (authorization.json().get("active") != True):
                 return response.Response(
                     ctx,
                     status_code=401,
-                    response_data=rdata
+                    response_data=json.dumps({"active": False, "wwwAuthenticate": jsonData})
                 )
+        except(Exception) as ex1:
+            jsonData = 'error parsing json payload: ' + str(ex1)
+            put_logs_response = logging.put_logs(
+                log_id="ocid1.log.oc1.iad.amaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaanamaaaaaan",
+                put_logs_details=oci.loggingingestion.models.PutLogsDetails(
+                    specversion="EXAMPLE-specversion-Value",
+                    log_entry_batches=[
+                        oci.loggingingestion.models.LogEntryBatch(
+                            entries=[
+                                oci.loggingingestion.models.LogEntry(
+                                    data="error(a): " + jsonData,
+                                    id="ocid1.test.oc1..00000001.EXAMPLE-id-Value")],
+                            source="EXAMPLE-source-Value",
+                            type="EXAMPLE-type-Value")]))
+            rdata = json.dumps({
+                "active": False,
+                "context": {
+                    "status_code": 401,
+                    "message": "Unauthorized",
+                    "body": body,
+                    "body_schema_validation": json.dumps(body_schema_validation),
+                    "error": str(ex1)
+                }})
+
+            return response.Response(
+                ctx,
+                status_code=401,
+                response_data=rdata
+            )
 
         rdata = json.dumps({
             "active": True,
