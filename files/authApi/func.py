@@ -124,7 +124,7 @@ def handler(ctx, data: io.BytesIO = None):
         # Validate API spec
         if (body_schema_validation != None):
             if (".apigatewayapi." not in header["body_schema_validation"]):
-                # Version OpenAPI 3
+                # Com validacao direto por propriedades (sem schemas e referencias)
                 try:
                     validate(body, body_schema_validation["schema"])
                     return response.Response(
@@ -162,7 +162,7 @@ def handler(ctx, data: io.BytesIO = None):
                         response_data=rdata
                     )
             else:
-                # Version Swagger 2
+                # Com schema de validação - Tanto swagger como Open API 3
                 try:
                     bravado_config = {
                         'validate_swagger_spec': False,
@@ -175,7 +175,10 @@ def handler(ctx, data: io.BytesIO = None):
                     api_spec = apigateway_client.get_api_content(contents[1])
                     spec_dict = json.loads(api_spec.data.content)
                     spec = Spec.from_dict(spec_dict, config=bravado_config)
-                    schema = spec_dict["definitions"][contents[0]]
+                    try:
+                        schema = spec_dict["definitions"][contents[0]]
+                    except:
+                        schema = spec_dict["components"]["schemas"][contents[0]]
                     validate_object(spec, schema, body)
                 except (Exception) as ex3:
                     error_msg = beautify_str(str(ex3))

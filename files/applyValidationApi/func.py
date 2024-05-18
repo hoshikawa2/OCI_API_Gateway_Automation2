@@ -516,7 +516,12 @@ def process_api_spec(api_id, compartmentId, environment, swagger, functionId, ho
             API_NAME = fullSpec["info"]["title"]
             if (version == "3"):
                 try:
-                    SCHEMA_BODY_VALIDATION = str(fullSpec["paths"][spec["path"]][str(spec["methods"][0]).lower()]["requestBody"]["content"]["application/json"])
+                    try:
+                        reference = str(fullSpec["paths"][spec["path"]][str(spec["methods"][0]).lower()]["requestBody"]["content"]["application/json"]["schema"]["$ref"]).replace("#/components/schemas/", "")
+                        SCHEMA_BODY_VALIDATION = reference + "," + api_id
+                    except:
+                        reference = str(fullSpec["paths"][spec["path"]][str(spec["methods"][0]).lower()]["requestBody"]["content"]["application/json"])
+                        SCHEMA_BODY_VALIDATION = reference
                     CONTENT_TYPE = "application/json"
                 except:
                     SCHEMA_BODY_VALIDATION = ""
