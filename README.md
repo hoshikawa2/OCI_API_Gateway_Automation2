@@ -139,18 +139,16 @@ This is the **IDCS** service authorization by the token passed in BODY and will 
 
 This is the main code for your authorization function and will be described in sequence.
 
-![img_1.png](images/authApi_2.png)
+![img.png](images/authApi_2.png)
 
-Authorization function works 2 times 
-The first call to the authorization function needs to validate your token from the **IDCS** and the first call always came with **body_schema_validation** = None.
-In the second call, the **body_schema_validation** came with some schema value from your OpenAPI spec, so the **IDCS** validation will be skiped.
+Remember that the API always will be deployed in 2 layers. The first layer will call the second layer. 
+Authorization function works only in the second layer for best performance. This will be explained in the next section (**applyValidationApi**)
 
 ![img_2.png](images/authApi_3.png)
 
-In the first authorization execution, the validation step will be skiped but in the second execution, the validation occurs with the same logic in the **body_schema_validation**.
+This is the schema validation for Swagger and Open API 3
 
-![img_3.png](images/authApi_4.png)
-
+![img.png](images/authApi_4.png)
 
 ## applyValidationApi
 
@@ -168,7 +166,7 @@ The validation respecting the Swagger 2.0 spec can be done by this component: [S
 
 The authorization function is deployed in the proxy API deployment and in the real API deployment, but the validation of the spec will be done only in the real API layer and **if** the HEADER **body_schema_validation** has a content.
 
-![img_8.png](images/img_8.png)
+![img.png](images/img_8.png)
 
 You need to deploy the API (you can see the **deployment** file [applyValidationApi.json](./files/applyValidationApi/applyValidationApi.json) in JSON format to understand the parameters):
 

@@ -183,10 +183,10 @@ def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gate
     for item in payload:
         methods = json.loads(json.dumps(item["METHOD"].split(" ")))
         path_prefix = item["PATH_PREFIX"]
+        callback_url = ("https://" + host + item["PATH_PREFIX"] + "validation-callback" + item["PATH"]).replace("{", "${request.path[").replace("}", "]}")
         if (item["SCHEMA_BODY_VALIDATION"] != ""):
-            callback_url = ("https://" + host + item["PATH_PREFIX"] + "validation-callback" + item["PATH"]).replace("{", "${request.path[").replace("}", "]}")
             put_logs_response = logging.put_logs(
-                log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                log_id="ocid1.log.oc1.iad.amaaaaaaamaaaaaaamaaaaaaamaaaaaaamaaaaaaamaaaaaaamaaaaaaamaaaaaa",
                 put_logs_details=oci.loggingingestion.models.PutLogsDetails(
                     specversion="EXAMPLE-specversion-Value",
                     log_entry_batches=[
@@ -241,9 +241,18 @@ def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gate
                     path=item["PATH"],
                     backend=oci.apigateway.models.HTTPBackend(
                         type="HTTP_BACKEND",
+                        url=callback_url,
+                        is_ssl_verify_disabled=False),
+                    methods=methods))
+            new_routes.append(
+                oci.apigateway.models.ApiSpecificationRoute(
+                    path=item["PATH"],
+                    backend=oci.apigateway.models.HTTPBackend(
+                        type="HTTP_BACKEND",
                         url=item["ENDPOINT"],
                         is_ssl_verify_disabled=False),
                     methods=methods))
+
 
     if (new_routes != [ ]):
         validation_deployment_details=oci.apigateway.models.UpdateDeploymentDetails(
@@ -296,34 +305,12 @@ def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gate
         creeateOrUpdateDeployment(compartmendId=compartmentId, displayName=displayName + "-validation", validation_deployment_details=validation_deployment_details, create_deployment_details=create_deployment_details, api_gateway_id=api_gateway_id)
 
     if (routes != [ ]):
-        # apigateway_client.update_deployment(deployment_id=deployment_id, update_deployment_details=oci.apigateway.models.UpdateDeploymentDetails(
-        #     display_name=displayName,
-        #     specification=oci.apigateway.models.ApiSpecification(
-        #         request_policies=oci.apigateway.models.ApiSpecificationRequestPolicies(
-        #             authentication=oci.apigateway.models.CustomAuthenticationPolicy(
-        #                 type="CUSTOM_AUTHENTICATION",
-        #                 function_id=functionId,
-        #                 is_anonymous_access_allowed=False,
-        #                 parameters={
-        #                     'token': 'request.headers[token]',
-        #                     'body': 'request.body'},
-        #                 cache_key=["token"])),
-        #             routes=routes)))
-
+        # The 1st layer will not authenticate
         validation_deployment_details=oci.apigateway.models.UpdateDeploymentDetails(
             display_name=displayName,
             specification=oci.apigateway.models.ApiSpecification(
                 request_policies=oci.apigateway.models.ApiSpecificationRequestPolicies(
-                    rate_limiting=rate_limiting,
-                    authentication=oci.apigateway.models.CustomAuthenticationPolicy(
-                        type="CUSTOM_AUTHENTICATION",
-                        function_id=functionId,
-                        is_anonymous_access_allowed=False,
-                        parameters={
-                            'token': 'request.headers[token]',
-                            'body': 'request.body',
-                            'opc-request-id': 'request.headers[opc-request-id]'},
-                        cache_key=["token", "opc-request-id"])),
+                    rate_limiting=rate_limiting),
                 routes=routes))
 
         create_deployment_details=oci.apigateway.models.CreateDeploymentDetails(
@@ -333,17 +320,9 @@ def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gate
             path_prefix= path_prefix,
             specification=oci.apigateway.models.ApiSpecification(
                 request_policies=oci.apigateway.models.ApiSpecificationRequestPolicies(
-                    rate_limiting=rate_limiting,
-                    authentication=oci.apigateway.models.CustomAuthenticationPolicy(
-                        type="CUSTOM_AUTHENTICATION",
-                        function_id=functionId,
-                        is_anonymous_access_allowed=False,
-                        parameters={
-                            'token': 'request.headers[token]',
-                            'body': 'request.body',
-                            'opc-request-id': 'request.headers[opc-request-id]'},
-                        cache_key=["token", "opc-request-id"])),
+                    rate_limiting=rate_limiting),
                 routes=routes))
+
         creeateOrUpdateDeployment(compartmendId=compartmentId, displayName=displayName, validation_deployment_details=validation_deployment_details, create_deployment_details=create_deployment_details, api_gateway_id=api_gateway_id)
 
 
