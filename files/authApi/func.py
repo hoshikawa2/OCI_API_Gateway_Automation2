@@ -40,6 +40,47 @@ def beautify_str(str_msg):
 
 ###
 
+def replace_regex(variavel):
+    variavel = variavel.replace("\\d", "[0-9]")
+    variavel = variavel.replace("\\D", "[^0-9]")
+    variavel = variavel.replace("\\w", "[a-zA-Z0-9_]")
+    variavel = variavel.replace("\\W", "[^a-zA-Z0-9_]")
+    variavel = variavel.replace("/^", "^")
+    variavel = variavel.replace("$/", "$")
+
+    return variavel
+
+def replace_escape_chars(obj):
+    for k, v in obj.items():
+        if isinstance(v, str):
+            obj[k] = replace_regex(v)
+        elif isinstance(v, dict):
+            obj[k] = replace_escape_chars(v)
+        elif isinstance(v, list):
+            for i in range(len(v)):
+                if isinstance(v[i], str):
+                    v[i] = replace_regex(v[i])
+                elif isinstance(v[i], dict):
+                    v[i] = replace_escape_chars(v[i])
+    return obj
+
+def remove_property(dictionary, property_name):
+    keys_to_delete = [key for key in dictionary if key == property_name]
+    for key in keys_to_delete:
+        if ("\\s" in dictionary[key] or "\\S" in dictionary[key] or "\\w" in dictionary[key] or "\\W" in dictionary[key]
+                or "\\b" in dictionary[key] or "\\B" in dictionary[key] or "\\A" in dictionary[key] or "\\Z" in dictionary[key]):
+            del dictionary[key]
+        else:
+            dictionary[key] = replace_regex(dictionary[key])
+    for value in dictionary.values():
+        if isinstance(value, dict):
+            remove_property(value, property_name)
+        elif isinstance(value, list):
+            for item in value:
+                if isinstance(item, dict):
+                    remove_property(item, property_name)
+    return dictionary
+
 def handler(ctx, data: io.BytesIO = None):
     config = oci.config.from_file("config")
     logging = oci.loggingingestion.LoggingClient(config)
@@ -173,12 +214,14 @@ def handler(ctx, data: io.BytesIO = None):
                     apigateway_client = oci.apigateway.ApiGatewayClient(config)
                     api_spec = apigateway_client.get_api_content(contents[1])
                     spec_dict = json.loads(api_spec.data.content)
+                    spec_dict = remove_property(spec_dict, "pattern")
                     spec = Spec.from_dict(spec_dict, config=bravado_config)
                     try:
                         schema = spec_dict["definitions"][contents[0]]
                     except:
                         schema = spec_dict["components"]["schemas"][contents[0]]
-                    validate_object(spec, schema, body)
+                    schema_without_pattern = remove_property(schema, "pattern")
+                    validate_object(spec, schema_without_pattern, body)
                 except (Exception) as ex3:
                     error_msg = beautify_str(str(ex3))
                     put_logs_response = logging.put_logs(
