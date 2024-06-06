@@ -43,6 +43,7 @@ def beautify_str(str_msg):
 def replace_regex(variavel):
     variavel = variavel.replace("\\d", "[0-9]")
     variavel = variavel.replace("\\D", "[^0-9]")
+    variavel = variavel.replace("\\.", "[.]")
     variavel = variavel.replace("\\w", "[a-zA-Z0-9_]")
     variavel = variavel.replace("\\W", "[^a-zA-Z0-9_]")
     variavel = variavel.replace("/^", "^")
