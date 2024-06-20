@@ -17,7 +17,7 @@ import datetime
 # config = oci.config.from_file(profile_name='DEFAULT')
 #
 # Método: getSpec()
-# text_file = open("/Teste 2024-03-15/teste1.yaml", "r")
+# text_file = open("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-15/qrcode.yaml", "r")
 
 def migrate_to_apigw(payload, url, clientID, secretID):
     auth = clientID + ":" + secretID
@@ -35,7 +35,7 @@ def migrate_to_apigw(payload, url, clientID, secretID):
 
 
 def getSpec(name):
-    text_file = open(name, "r")
+    text_file = open(name, "r", encoding='utf-8')
     data = text_file.read()
     text_file.close()
 
@@ -239,14 +239,28 @@ def is_json(swagger):
         except:
             return False
 
+def replace_escape_chars(obj):
+    for k, v in obj.items():
+        if isinstance(v, str):
+            obj[k] = v.replace('\\\\', '\\"')
+        elif isinstance(v, dict):
+            obj[k] = replace_escape_chars(v)
+        elif isinstance(v, list):
+            for i in range(len(v)):
+                if isinstance(v[i], str):
+                    v[i] = v[i].replace('\\\\', '\\"')
+                elif isinstance(v[i], dict):
+                    v[i] = replace_escape_chars(v[i])
+    return obj
+
 def convert_json(swagger):
     yaml_object = yaml.safe_load(swagger) # yaml_object will be a list or a dict
-    return json.dumps(yaml_object, indent=2, default=DateEncoder)
-
+    x = json.dumps(yaml_object, ensure_ascii=False, indent=2, default=DateEncoder).encode('utf-8')
+    return x.decode()
 
 def process_api_spec():
     # displayName = "EXEMPLO"
-    compartmentId = "ocid1.compartment.oc1..aaaaaaaaqomaaaaaaaaqomaaaaaaaaqomaaaaaaaaqomaaaaaaaaqomaaaaaaaaqom"
+    compartmentId = "ocid1.compartment.oc1..aaaaaaaaqom2belitvh5ubr342rgzyeycvyg3zt6b4i4owmkzpnpwft37rga"
     environment = "QA"
     type = "REST"
     rate_limit = "2500,CLIENT_IP"
@@ -261,7 +275,7 @@ def process_api_spec():
         print("erro")
 
 
-# Create a default config using DEFAULT profile in default location
+    # Create a default config using DEFAULT profile in default location
     # Refer to
     # https://docs.cloud.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm#SDK_and_CLI_Configuration_File
     # for more info
@@ -296,40 +310,43 @@ def process_api_spec():
     # -----------------------------------------------------------------
 
     arquivo = []
-    arquivo.append("/Teste 2024-03-15/teste1.yaml")
-    arquivo.append("/Testes 2024-03-11/teste2.json")
-    arquivo.append("/Testes 2024-03-11/teste3.yaml")
-    arquivo.append("/Testes 2024-03-11/teste4.yaml")
-    arquivo.append("/Teste 2024-03-15/teste5.yaml")
-    arquivo.append("/Teste 2024-03-18/teste6.yaml")
-    arquivo.append("/Teste 2024-03-18/teste7.yaml")
-    arquivo.append("/Teste 2024-03-18/teste8.yaml")
-    arquivo.append("/Teste 2024-03-18/teste9.yaml")
-    arquivo.append("/Teste 2024-03-18/teste10.yaml")
-    arquivo.append("/Teste 2024-03-18/teste11.yaml")
-    arquivo.append("/Teste 2024-03-20/teste12.json")
-    arquivo.append("/Teste 2024-03-21/teste13.yaml")
-    arquivo.append("/Teste 2024-03-21/teste14.json")
-    arquivo.append("/Teste 2024-03-22/teste15.json")
-    arquivo.append("/Teste 2024-03-25/teste16.yaml")
+    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Testes 2024-03-11/1.0.0-rc2_rcc-interop-agenda_modificado.json")
+    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Testes 2024-03-11/caso1.yaml")
+    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Testes 2024-03-11/caso2.yaml")
+    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-15/caso2024-03-15.yaml")
+    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-15/qrcode.yaml")
+    #arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-18/1.0.0-rc1_cob 1.yaml")
+    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-18/1.0.0-rc1_cobv.yaml")
+    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-18/1.0.0-rc1_loc.yaml")
+    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-18/1.0.0-rc1_lotecobv.yaml")
+    #arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-18/1.0.0-rc1_pix.yaml")
+    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-18/1.0.0-rc1_webhook.yaml")
+    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-20/1.0.0-rc8_cprs.json")
+    #arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-21/1.0.0-rc1_cob 1.yaml")
+    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-21/1.0.0-rc2_rcc-interop-agenda.json")
+    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-22/1.0.0-rc8_cprs.json")
+    #arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-03-25/Banco B3/1.0.0-rc1_cob.yaml")
+    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-06-03/1.0.0-rc1_cob.yaml")
+    arquivo.append("/Users/cristianohoshikawa/Dropbox/ORACLE/B3/API Gateway/Teste 2024-06-19/1.0.0-rc1_cob.yaml")
     display = []
-    display.append("caso1")
-    display.append("caso2")
-    display.append("caso3")
-    display.append("caso4")
-    display.append("caso5")
-    display.append("caso6")
-    display.append("caso7")
-    display.append("caso8")
-    display.append("caso9")
-    display.append("caso10")
-    display.append("caso11")
-    display.append("caso12")
-    display.append("caso13")
-    display.append("caso14")
-    display.append("caso15")
-    display.append("caso16")
-
+    display.append("Interoperabilidades-Agenda")
+    display.append("caso-1")
+    display.append("caso-2")
+    display.append("caso2024-03-15")
+    display.append("qrcode")
+    #display.append("cob")
+    display.append("cobv")
+    display.append("loc")
+    display.append("lotecobv")
+    #display.append("pix")
+    display.append("webhook")
+    display.append("cprs")
+    #display.append("cob1")
+    display.append("rcc-interop-agenda")
+    display.append("Rural")
+    #display.append("cob")
+    display.append("pix")
+    display.append("GI - Modulo PIX Cob")
     idxArquivo = 0
 
     while idxArquivo < len(arquivo):
@@ -340,6 +357,16 @@ def process_api_spec():
 
         data = getSpec(arquivo[idxArquivo])
         fullSpec = json.loads(data)
+
+        swagger = str(data)
+        swagger2 = str(data)
+        if (is_json(swagger)):
+            body = json.loads(swagger)
+        else:
+            body = json.loads(convert_json(swagger2))
+            swagger = convert_json(data)
+
+        swagger = swagger
 
         displayName = display[idxArquivo]
 
@@ -377,81 +404,86 @@ def process_api_spec():
                 status = spec["backend"]["status"]
                 specPath = spec["path"]
 
-                if (version == "3"):
-                    if (has_path_endpoint(endPointOrigin)):
-                        endPoint = find_base_endpoint(endPointOrigin)
-                        specPath = (find_base_pathendpoint(endPointOrigin, specPath)).replace("//", "/")
-                        fullEndpoint = (endPoint + specPath + spec["path"]).replace("{", "${request.path[").replace("}", "]}")
-                        FULL_PATH = specPath
+                for method in spec["methods"]:
+                    METHOD = method.lstrip().upper()
+
+                    if (version == "3"):
+                        if (has_path_endpoint(endPointOrigin)):
+                            endPoint = find_base_endpoint(endPointOrigin)
+                            specPath = (find_base_pathendpoint(endPointOrigin, specPath)).replace("//", "/")
+                            fullEndpoint = (endPoint + specPath + spec["path"]).replace("{", "${request.path[").replace("}", "]}")
+                            FULL_PATH = specPath
+                            ENDPOINT = fullEndpoint
+                            PATH = spec["path"]
+                            PATH_PREFIX = specPath
+                            #METHOD = accMethods_v3(api_spec["routes"], spec["path"], status)
+                        else:
+                            fullEndpoint = (endPoint + find_base_path(specPath) + find_path(specPath)).replace("{", "${request.path[").replace("}", "]}")
+                            FULL_PATH = specPath
+                            ENDPOINT = fullEndpoint
+                            PATH = find_path(specPath)
+                            PATH_PREFIX = find_base_path(specPath)
+                            #METHOD = accMethods(api_spec["routes"], find_path(spec["path"]), status)
+                    else:
+                        schemes = ""
+                        try:
+                            schemes = fullSpec["schemes"][0]
+                        except:
+                            schemes = "https"
+
+                        fullEndpoint = check_endpoint(schemes, (endPoint + removeLastSlash(fullSpec["basePath"]) + spec["path"]).replace("{", "${request.path[").replace("}", "]}"))
+                        FULL_PATH = fullSpec["basePath"] + spec["path"]
                         ENDPOINT = fullEndpoint
                         PATH = spec["path"]
-                        PATH_PREFIX = specPath
-                        METHOD = accMethods_v3(api_spec["routes"], spec["path"], status)
+                        PATH_PREFIX = removeLastSlash(fullSpec["basePath"])
+                        #METHOD = accMethods_v2(api_spec["routes"], PATH, status)
+
+                    OPERATIONID = fullSpec["paths"][spec["path"]][str(spec["methods"][0]).lower()]["operationId"]
+                    API_NAME = fullSpec["info"]["title"]
+                    if (version == "3"):
+                        try:
+                            SCHEMA_BODY_VALIDATION = str(fullSpec["paths"][spec["path"]][str(spec["methods"][0]).lower()]["requestBody"]["content"]["application/json"])
+                            CONTENT_TYPE = "application/json"
+                        except:
+                            SCHEMA_BODY_VALIDATION = ""
+                            CONTENT_TYPE = ""
                     else:
-                        fullEndpoint = (endPoint + find_base_path(specPath) + find_path(specPath)).replace("{", "${request.path[").replace("}", "]}")
-                        FULL_PATH = specPath
-                        ENDPOINT = fullEndpoint
-                        PATH = find_path(specPath)
-                        PATH_PREFIX = find_base_path(specPath)
-                        METHOD = accMethods(api_spec["routes"], find_path(spec["path"]), status)
-                else:
-                    schemes = ""
-                    try:
-                        schemes = fullSpec["schemes"][0]
-                    except:
-                        schemes = "https"
-
-                    fullEndpoint = check_endpoint(schemes, (endPoint + removeLastSlash(fullSpec["basePath"]) + spec["path"]).replace("{", "${request.path[").replace("}", "]}"))
-                    FULL_PATH = fullSpec["basePath"] + spec["path"]
-                    ENDPOINT = fullEndpoint
-                    PATH = spec["path"]
-                    PATH_PREFIX = removeLastSlash(fullSpec["basePath"])
-                    METHOD = accMethods_v2(api_spec["routes"], PATH, status)
-
-                OPERATIONID = fullSpec["paths"][spec["path"]][str(spec["methods"][0]).lower()]["operationId"]
-                API_NAME = fullSpec["info"]["title"]
-                if (version == "3"):
-                    try:
-                        SCHEMA_BODY_VALIDATION = str(fullSpec["paths"][spec["path"]][str(spec["methods"][0]).lower()]["requestBody"]["content"]["application/json"])
-                        CONTENT_TYPE = "application/json"
-                    except:
                         SCHEMA_BODY_VALIDATION = ""
                         CONTENT_TYPE = ""
-                else:
-                    SCHEMA_BODY_VALIDATION = ""
-                    CONTENT_TYPE = ""
-                    try:
-                        reference = str(fullSpec["paths"][spec["path"]][str(spec["methods"][0]).lower()]["parameters"][0]["schema"]["$ref"]).replace("#/definitions/", "")
-                        SCHEMA_BODY_VALIDATION = reference + "," + api_id
-                        CONTENT_TYPE = "application/json"
-                    except:
-                        SCHEMA_BODY_VALIDATION = ""
-                        CONTENT_TYPE = ""
-                TYPE = type
-                ENVIRONMENT = environment
-                json_data_list.append({
-                    'API_NAME': API_NAME,
-                    'TYPE': TYPE,
-                    'ENVIRONMENT': ENVIRONMENT,
-                    'METHOD': METHOD,
-                    'PATH_PREFIX': PATH_PREFIX,
-                    'PATH': PATH,
-                    'ENDPOINT': ENDPOINT,
-                    'SCHEMA_BODY_VALIDATION': SCHEMA_BODY_VALIDATION,
-                    'CONTENT_TYPE': CONTENT_TYPE
-                })
-                print(API_NAME, TYPE, ENVIRONMENT, METHOD, PATH_PREFIX, PATH, ENDPOINT, SCHEMA_BODY_VALIDATION, CONTENT_TYPE)
+                        try:
+                            reference = str(fullSpec["paths"][spec["path"]][str(spec["methods"][0]).lower()]["parameters"][0]["schema"]["$ref"]).replace("#/definitions/", "")
+                            SCHEMA_BODY_VALIDATION = reference + "," + api_id
+                            CONTENT_TYPE = "application/json"
+                        except:
+                            SCHEMA_BODY_VALIDATION = ""
+                            CONTENT_TYPE = ""
+                    TYPE = type
+                    ENVIRONMENT = environment
+                    json_data_list.append({
+                        'API_NAME': API_NAME,
+                        'TYPE': TYPE,
+                        'ENVIRONMENT': ENVIRONMENT,
+                        'METHOD': METHOD,
+                        'PATH_PREFIX': PATH_PREFIX,
+                        'PATH': PATH,
+                        'ENDPOINT': ENDPOINT,
+                        'SCHEMA_BODY_VALIDATION': SCHEMA_BODY_VALIDATION,
+                        'CONTENT_TYPE': CONTENT_TYPE
+                    })
+                    print(API_NAME, TYPE, ENVIRONMENT, METHOD, PATH_PREFIX, PATH, ENDPOINT, SCHEMA_BODY_VALIDATION, CONTENT_TYPE)
 
             json_data_list = verify_path(json_data_list)
             payload = json.dumps(json_data_list)
-            json_data_list = { each['PATH'] : each for each in json_data_list}.values()
+            #json_data_list = { each['PATH'] : each for each in json_data_list}.values()
 
             # if (version == "2"):
             #     payload = json.loads(json.dumps(group_by(payload)))
             #     #json_data_list = { each['PATH'] : each for each in payload}.values()
-            payload = json.loads(json.dumps(group_by(payload)))
+            #payload = json.loads(json.dumps(group_by(payload)))
+            payload = json.loads(json.dumps(json_data_list))
             print(payload)
-            # migrate_to_apigw(payload, "https://teste.integration.ocp.oraclecloud.com:443/ic/api/integration/v1/flows/rest/MIGRATE_TO_APIGW/1.0/convert", "OIC_SERVICE_USER_BASICAUTH", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+            # migrate_to_apigw(payload, "https://oic-hoshikawa2-idcci5ks1puo-ia.integration.ocp.oraclecloud.com:443/ic/api/integration/v1/flows/rest/MIGRATE_TO_APIGW/1.0/convert", "OIC_SERVICE_USER_BASICAUTH", "e7ae6069-e471-496e-916d-5dc2ae3edac0")
+            applyAuthApi(compartmentId=compartmentId, displayName=API_NAME, payload=payload, functionId="", host="", api_gateway_id="", rate_limit=rate_limit)
 
             c = 0
             idxArquivo = idxArquivo + 1
@@ -459,6 +491,187 @@ def process_api_spec():
         except(Exception) as ex:
             print(ex)
             time.sleep(2)
+
+
+def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gateway_id, rate_limit):
+    config = oci.config.from_file(profile_name='DEFAULT')
+    logging = oci.loggingingestion.LoggingClient(config)
+    apigateway_client = oci.apigateway.DeploymentClient(config)
+    listGateway = apigateway_client.list_deployments(compartment_id=compartmentId, display_name=displayName, lifecycle_state="ACTIVE")
+    gateway = json.loads(str(listGateway.data))
+    ind = -1
+    c = -1
+    if (len(gateway) > 0):
+        c = 0
+        for item in gateway["items"]:
+            if (item["gateway_id"] == api_gateway_id):
+                ind = c
+                break
+            c = c + 1
+    if (gateway["items"] != [] and c > -1 and ind > -1):
+        gateway_id = gateway["items"][ind]["gateway_id"]
+        deployment_id = gateway["items"][ind]["id"]
+    else:
+        gateway_id = api_gateway_id
+        deployment_id = 0
+
+    try:
+        rate_config = rate_limit.split(',')
+        rate_seconds = int(rate_config[0])
+        rate_key = rate_config[1]
+        rate_limiting = oci.apigateway.models.RateLimitingPolicy(
+            rate_in_requests_per_second=rate_seconds,
+            rate_key=rate_key)
+    except:
+        rate_limiting = None
+
+    path_prefix = "/"
+    routes = [ ]
+    new_routes = [ ]
+    for item in payload:
+        methods = [item["METHOD"]]
+        path_prefix = item["PATH_PREFIX"]
+        callback_url = ("https://" + host + item["PATH_PREFIX"] + "validation-callback" + item["PATH"]).replace("{", "${request.path[").replace("}", "]}")
+        if (item["SCHEMA_BODY_VALIDATION"] != ""):
+            put_logs_response = logging.put_logs(
+                log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                put_logs_details=oci.loggingingestion.models.PutLogsDetails(
+                    specversion="EXAMPLE-specversion-Value",
+                    log_entry_batches=[
+                        oci.loggingingestion.models.LogEntryBatch(
+                            entries=[
+                                oci.loggingingestion.models.LogEntry(
+                                    data="callback_url: " + callback_url,
+                                    id="ocid1.test.oc1..00000001.EXAMPLE-id-Value")],
+                            source="EXAMPLE-source-Value",
+                            type="EXAMPLE-type-Value")]))
+            routes.append(
+                oci.apigateway.models.ApiSpecificationRoute(
+                    path=item["PATH"],
+                    backend=oci.apigateway.models.HTTPBackend(
+                        type="HTTP_BACKEND",
+                        url=callback_url,
+                        is_ssl_verify_disabled=False),
+                    methods=methods,
+                    request_policies=oci.apigateway.models.ApiSpecificationRouteRequestPolicies(
+                        header_transformations=oci.apigateway.models.HeaderTransformationPolicy(
+                            set_headers=oci.apigateway.models.SetHeaderPolicy(
+                                items=[
+                                    oci.apigateway.models.SetHeaderPolicyItem(
+                                        name="body_schema_validation",
+                                        values=[item["SCHEMA_BODY_VALIDATION"]],
+                                        if_exists="APPEND")]),
+                        )
+                    )))
+            new_routes.append(
+                oci.apigateway.models.ApiSpecificationRoute(
+                    path=item["PATH"],
+                    backend=oci.apigateway.models.HTTPBackend(
+                        type="HTTP_BACKEND",
+                        url=item["ENDPOINT"],
+                        is_ssl_verify_disabled=False),
+                    methods=methods,
+                    request_policies=oci.apigateway.models.ApiSpecificationRouteRequestPolicies(
+                        header_transformations=oci.apigateway.models.HeaderTransformationPolicy(
+                            set_headers=oci.apigateway.models.SetHeaderPolicy(
+                                items=[
+                                    oci.apigateway.models.SetHeaderPolicyItem(
+                                        name="body_schema_validation",
+                                        values=[item["SCHEMA_BODY_VALIDATION"]],
+                                        if_exists="APPEND")]),
+                        )
+                    )
+                ))
+
+        else:
+            routes.append(
+                oci.apigateway.models.ApiSpecificationRoute(
+                    path=item["PATH"],
+                    backend=oci.apigateway.models.HTTPBackend(
+                        type="HTTP_BACKEND",
+                        url=callback_url,
+                        is_ssl_verify_disabled=False),
+                    methods=methods))
+            new_routes.append(
+                oci.apigateway.models.ApiSpecificationRoute(
+                    path=item["PATH"],
+                    backend=oci.apigateway.models.HTTPBackend(
+                        type="HTTP_BACKEND",
+                        url=item["ENDPOINT"],
+                        is_ssl_verify_disabled=False),
+                    methods=methods))
+
+
+    if (new_routes != [ ]):
+        validation_deployment_details=oci.apigateway.models.UpdateDeploymentDetails(
+            display_name=displayName + "-validation",
+            specification=oci.apigateway.models.ApiSpecification(
+                request_policies=oci.apigateway.models.ApiSpecificationRequestPolicies(
+                    rate_limiting=rate_limiting,
+                    authentication=oci.apigateway.models.CustomAuthenticationPolicy(
+                        type="CUSTOM_AUTHENTICATION",
+                        function_id=functionId,
+                        is_anonymous_access_allowed=False,
+                        parameters={
+                            'token': 'request.headers[token]',
+                            'body': 'request.body',
+                            'body_schema_validation': 'request.headers[body_schema_validation]',
+                            'opc-request-id': 'request.headers[opc-request-id]'},
+                        cache_key=["token", "opc-request-id"],
+                        validation_failure_policy=oci.apigateway.models.ModifyResponseValidationFailurePolicy(
+                            type="MODIFY_RESPONSE",
+                            response_code="401",
+                            response_message="${request.auth[error]}"
+                        )
+                    )),
+                routes=new_routes))
+        create_deployment_details=oci.apigateway.models.CreateDeploymentDetails(
+            display_name=displayName + "-validation",
+            compartment_id=compartmentId,
+            gateway_id=gateway_id,
+            path_prefix= path_prefix + "validation-callback",
+            specification=oci.apigateway.models.ApiSpecification(
+                request_policies=oci.apigateway.models.ApiSpecificationRequestPolicies(
+                    rate_limiting=rate_limiting,
+                    authentication=oci.apigateway.models.CustomAuthenticationPolicy(
+                        type="CUSTOM_AUTHENTICATION",
+                        function_id=functionId,
+                        is_anonymous_access_allowed=False,
+                        parameters={
+                            'token': 'request.headers[token]',
+                            'body': 'request.body',
+                            'body_schema_validation': 'request.headers[body_schema_validation]',
+                            'opc-request-id': 'request.headers[opc-request-id]'},
+                        cache_key=["token", "opc-request-id"],
+                        validation_failure_policy=oci.apigateway.models.ModifyResponseValidationFailurePolicy(
+                            type="MODIFY_RESPONSE",
+                            response_code="401",
+                            response_message="${request.auth[error]}"
+                        )
+                    )),
+                routes=new_routes))
+        #creeateOrUpdateDeployment(compartmendId=compartmentId, displayName=displayName + "-validation", validation_deployment_details=validation_deployment_details, create_deployment_details=create_deployment_details, api_gateway_id=api_gateway_id)
+
+    if (routes != [ ]):
+        # The 1st layer will not authenticate
+        validation_deployment_details=oci.apigateway.models.UpdateDeploymentDetails(
+            display_name=displayName,
+            specification=oci.apigateway.models.ApiSpecification(
+                request_policies=oci.apigateway.models.ApiSpecificationRequestPolicies(
+                    rate_limiting=rate_limiting),
+                routes=routes))
+
+        create_deployment_details=oci.apigateway.models.CreateDeploymentDetails(
+            display_name=displayName,
+            compartment_id=compartmentId,
+            gateway_id=gateway_id,
+            path_prefix= path_prefix,
+            specification=oci.apigateway.models.ApiSpecification(
+                request_policies=oci.apigateway.models.ApiSpecificationRequestPolicies(
+                    rate_limiting=rate_limiting),
+                routes=routes))
+
+        #creeateOrUpdateDeployment(compartmendId=compartmentId, displayName=displayName, validation_deployment_details=validation_deployment_details, create_deployment_details=create_deployment_details, api_gateway_id=api_gateway_id)
 
 # Mudar DisplayName e text_file para poder executar
 process_api_spec()

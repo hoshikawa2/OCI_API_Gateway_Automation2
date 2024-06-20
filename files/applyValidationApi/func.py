@@ -181,12 +181,12 @@ def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gate
     routes = [ ]
     new_routes = [ ]
     for item in payload:
-        methods = json.loads(json.dumps(item["METHOD"].split(" ")))
+        methods = [item["METHOD"]]
         path_prefix = item["PATH_PREFIX"]
         callback_url = ("https://" + host + item["PATH_PREFIX"] + "validation-callback" + item["PATH"]).replace("{", "${request.path[").replace("}", "]}")
         if (item["SCHEMA_BODY_VALIDATION"] != ""):
             put_logs_response = logging.put_logs(
-                log_id="ocid1.log.oc1.iad.amaaaaaaamaaaaaaamaaaaaaamaaaaaaamaaaaaaamaaaaaaamaaaaaaamaaaaaa",
+                log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
                 put_logs_details=oci.loggingingestion.models.PutLogsDetails(
                     specversion="EXAMPLE-specversion-Value",
                     log_entry_batches=[
@@ -325,34 +325,6 @@ def applyAuthApi(compartmentId, displayName, payload, functionId, host, api_gate
 
         creeateOrUpdateDeployment(compartmendId=compartmentId, displayName=displayName, validation_deployment_details=validation_deployment_details, create_deployment_details=create_deployment_details, api_gateway_id=api_gateway_id)
 
-
-def accMethods(routes, path, status):
-    METHOD = ""
-    for spec in routes:
-        if (find_path(spec["path"]) == path and spec["backend"]["status"] == status):
-            for method in spec["methods"]:
-                if (method not in METHOD):
-                    METHOD = (METHOD + " " + method).lstrip().upper()
-    return METHOD
-
-def accMethods_v2(routes, path, status):
-    METHOD = ""
-    for spec in routes:
-        if (spec["path"] == path and spec["backend"]["status"] == status):
-            for method in spec["methods"]:
-                if (method not in METHOD):
-                    METHOD = (METHOD + " " + method).lstrip().upper()
-    return METHOD
-
-def accMethods_v3(routes, path, status):
-    METHOD = ""
-    for spec in routes:
-        if (spec["path"] == path and spec["backend"]["status"] == status):
-            for method in spec["methods"]:
-                if (method not in METHOD):
-                    METHOD = (METHOD + " " + method).lstrip().upper()
-    return METHOD
-
 def check_endpoint(schemes, endpoint):
     if (schemes == ""):
         if (endpoint.find("http://") == -1 and endpoint.find("https://") == -1):
@@ -367,31 +339,6 @@ def check_endpoint(schemes, endpoint):
 
 def key_func(k):
     return k['PATH']
-
-def group_by(payload):
-    config = oci.config.from_file("config")
-    logging = oci.loggingingestion.LoggingClient(config)
-    payload = json.loads(payload)
-    INFO = sorted(payload, key=key_func)
-    result_payload = [ ]
-    for key, value in groupby(INFO, key_func):
-        list_elements = [ ]
-        method_list = ""
-        for element in list(value):
-            list_elements.append(element)
-        for subItem in list_elements:
-            item = json.loads(json.dumps(subItem))
-            if (item["METHOD"] not in method_list):
-                method_list = (method_list + " " + item["METHOD"]).lstrip().upper()
-            API_NAME = item["API_NAME"]
-            TYPE = item["TYPE"]
-            ENVIRONMENT = item["ENVIRONMENT"]
-            PATH_PREFIX = item["PATH_PREFIX"]
-            PATH = item["PATH"]
-            ENDPOINT = item["ENDPOINT"]
-            SCHEMA_BODY_VALIDATION = item["SCHEMA_BODY_VALIDATION"]
-        result_payload.append({"API_NAME": API_NAME, "TYPE": TYPE, "ENVIRONMENT": ENVIRONMENT, "PATH_PREFIX": PATH_PREFIX, "PATH": PATH, "ENDPOINT": ENDPOINT, "METHOD": method_list, "SCHEMA_BODY_VALIDATION": SCHEMA_BODY_VALIDATION})
-    return result_payload
 
 def verify_path(json_data_list):
     list_final = []
@@ -460,102 +407,101 @@ def process_api_spec(api_id, compartmentId, environment, swagger, functionId, ho
             status = spec["backend"]["status"]
             specPath = spec["path"]
 
-            if (version == "3"):
-                if (has_path_endpoint(endPointOrigin)):
-                    endPoint = find_base_endpoint(endPointOrigin)
-                    specPath = (find_base_pathendpoint(endPointOrigin, specPath)).replace("//", "/")
-                    fullEndpoint = (endPoint + specPath + spec["path"]).replace("{", "${request.path[").replace("}", "]}")
-                    FULL_PATH = specPath
+            for method in spec["methods"]:
+                METHOD = method.lstrip().upper()
+
+                if (version == "3"):
+                    if (has_path_endpoint(endPointOrigin)):
+                        endPoint = find_base_endpoint(endPointOrigin)
+                        specPath = (find_base_pathendpoint(endPointOrigin, specPath)).replace("//", "/")
+                        fullEndpoint = (endPoint + specPath + spec["path"]).replace("{", "${request.path[").replace("}", "]}")
+                        FULL_PATH = specPath
+                        ENDPOINT = fullEndpoint
+                        PATH = spec["path"]
+                        PATH_PREFIX = specPath
+                    else:
+                        fullEndpoint = (endPoint + find_base_path(specPath) + find_path(specPath)).replace("{", "${request.path[").replace("}", "]}")
+                        FULL_PATH = specPath
+                        ENDPOINT = fullEndpoint
+                        PATH = find_path(specPath)
+                        PATH_PREFIX = find_base_path(specPath)
+                else:
+                    schemes = ""
+                    try:
+                        schemes = fullSpec["schemes"][0]
+                    except:
+                        schemes = "https"
+
+                    fullEndpoint = check_endpoint(schemes, (endPoint + removeLastSlash(fullSpec["basePath"]) + spec["path"]).replace("{", "${request.path[").replace("}", "]}"))
+                    FULL_PATH = fullSpec["basePath"] + spec["path"]
                     ENDPOINT = fullEndpoint
                     PATH = spec["path"]
-                    PATH_PREFIX = specPath
-                    METHOD = accMethods_v3(api_spec["routes"], spec["path"], status)
-                else:
-                    fullEndpoint = (endPoint + find_base_path(specPath) + find_path(specPath)).replace("{", "${request.path[").replace("}", "]}")
-                    FULL_PATH = specPath
-                    ENDPOINT = fullEndpoint
-                    PATH = find_path(specPath)
-                    PATH_PREFIX = find_base_path(specPath)
-                    METHOD = accMethods(api_spec["routes"], find_path(spec["path"]), status)
-            else:
-                schemes = ""
-                try:
-                    schemes = fullSpec["schemes"][0]
-                except:
-                    schemes = "https"
+                    PATH_PREFIX = removeLastSlash(fullSpec["basePath"])
 
-                fullEndpoint = check_endpoint(schemes, (endPoint + removeLastSlash(fullSpec["basePath"]) + spec["path"]).replace("{", "${request.path[").replace("}", "]}"))
-                FULL_PATH = fullSpec["basePath"] + spec["path"]
-                ENDPOINT = fullEndpoint
-                PATH = spec["path"]
-                PATH_PREFIX = removeLastSlash(fullSpec["basePath"])
-                METHOD = accMethods_v2(api_spec["routes"], PATH, status)
-
-            OPERATIONID = fullSpec["paths"][spec["path"]][str(spec["methods"][0]).lower()]["operationId"]
-            API_NAME = fullSpec["info"]["title"]
-            if (version == "3"):
-                try:
+                OPERATIONID = fullSpec["paths"][spec["path"]][str(spec["methods"][0]).lower()]["operationId"]
+                API_NAME = fullSpec["info"]["title"]
+                if (version == "3"):
                     try:
-                        reference = str(fullSpec["paths"][spec["path"]][str(spec["methods"][0]).lower()]["requestBody"]["content"]["application/json"]["schema"]["$ref"]).replace("#/components/schemas/", "")
-                        SCHEMA_BODY_VALIDATION = reference + "," + api_id
+                        try:
+                            reference = str(fullSpec["paths"][spec["path"]][str(spec["methods"][0]).lower()]["requestBody"]["content"]["application/json"]["schema"]["$ref"]).replace("#/components/schemas/", "")
+                            SCHEMA_BODY_VALIDATION = reference + "," + api_id
+                        except:
+                            reference = str(fullSpec["paths"][spec["path"]][str(spec["methods"][0]).lower()]["requestBody"]["content"]["application/json"])
+                            SCHEMA_BODY_VALIDATION = reference
+                        CONTENT_TYPE = "application/json"
                     except:
-                        reference = str(fullSpec["paths"][spec["path"]][str(spec["methods"][0]).lower()]["requestBody"]["content"]["application/json"])
-                        SCHEMA_BODY_VALIDATION = reference
-                    CONTENT_TYPE = "application/json"
-                except:
+                        SCHEMA_BODY_VALIDATION = ""
+                        CONTENT_TYPE = ""
+                else:
                     SCHEMA_BODY_VALIDATION = ""
                     CONTENT_TYPE = ""
-            else:
-                SCHEMA_BODY_VALIDATION = ""
-                CONTENT_TYPE = ""
-                try:
-                    reference = str(fullSpec["paths"][spec["path"]][str(spec["methods"][0]).lower()]["parameters"][0]["schema"]["$ref"]).replace("#/definitions/", "")
-                    SCHEMA_BODY_VALIDATION = reference + "," + api_id
-                    CONTENT_TYPE = "application/json"
-                except:
-                    SCHEMA_BODY_VALIDATION = ""
-                    CONTENT_TYPE = ""
-            TYPE = type
-            ENVIRONMENT = environment
-            json_data_list.append({
-                'API_NAME': API_NAME,
-                'TYPE': TYPE,
-                'ENVIRONMENT': ENVIRONMENT,
-                'METHOD': METHOD,
-                'PATH_PREFIX': PATH_PREFIX,
-                'PATH': PATH,
-                'ENDPOINT': ENDPOINT,
-                'SCHEMA_BODY_VALIDATION': SCHEMA_BODY_VALIDATION,
-                'CONTENT_TYPE': CONTENT_TYPE
-            })
-            print(API_NAME, TYPE, ENVIRONMENT, METHOD, PATH_PREFIX, PATH, ENDPOINT, SCHEMA_BODY_VALIDATION, CONTENT_TYPE)
-            put_logs_response = logging.put_logs(
-                log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-                put_logs_details=oci.loggingingestion.models.PutLogsDetails(
-                    specversion="EXAMPLE-specversion-Value",
-                    log_entry_batches=[
-                        oci.loggingingestion.models.LogEntryBatch(
-                            entries=[
-                                oci.loggingingestion.models.LogEntry(
-                                    data="api deployment: " + json.dumps({
-                                        'API_NAME': API_NAME,
-                                        'TYPE': TYPE,
-                                        'ENVIRONMENT': ENVIRONMENT,
-                                        'METHOD': METHOD,
-                                        'PATH_PREFIX': PATH_PREFIX,
-                                        'PATH': PATH,
-                                        'ENDPOINT': ENDPOINT,
-                                        'SCHEMA_BODY_VALIDATION': SCHEMA_BODY_VALIDATION,
-                                        'CONTENT_TYPE': CONTENT_TYPE
-                                    }),
-                                    id="ocid1.test.oc1..00000001.EXAMPLE-id-Value")],
-                            source="EXAMPLE-source-Value",
-                            type="EXAMPLE-type-Value")]))
+                    try:
+                        reference = str(fullSpec["paths"][spec["path"]][str(spec["methods"][0]).lower()]["parameters"][0]["schema"]["$ref"]).replace("#/definitions/", "")
+                        SCHEMA_BODY_VALIDATION = reference + "," + api_id
+                        CONTENT_TYPE = "application/json"
+                    except:
+                        SCHEMA_BODY_VALIDATION = ""
+                        CONTENT_TYPE = ""
+                TYPE = type
+                ENVIRONMENT = environment
+                json_data_list.append({
+                    'API_NAME': API_NAME,
+                    'TYPE': TYPE,
+                    'ENVIRONMENT': ENVIRONMENT,
+                    'METHOD': METHOD,
+                    'PATH_PREFIX': PATH_PREFIX,
+                    'PATH': PATH,
+                    'ENDPOINT': ENDPOINT,
+                    'SCHEMA_BODY_VALIDATION': SCHEMA_BODY_VALIDATION,
+                    'CONTENT_TYPE': CONTENT_TYPE
+                })
+                print(API_NAME, TYPE, ENVIRONMENT, METHOD, PATH_PREFIX, PATH, ENDPOINT, SCHEMA_BODY_VALIDATION, CONTENT_TYPE)
+                put_logs_response = logging.put_logs(
+                    log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                    put_logs_details=oci.loggingingestion.models.PutLogsDetails(
+                        specversion="EXAMPLE-specversion-Value",
+                        log_entry_batches=[
+                            oci.loggingingestion.models.LogEntryBatch(
+                                entries=[
+                                    oci.loggingingestion.models.LogEntry(
+                                        data="api deployment: " + json.dumps({
+                                            'API_NAME': API_NAME,
+                                            'TYPE': TYPE,
+                                            'ENVIRONMENT': ENVIRONMENT,
+                                            'METHOD': METHOD,
+                                            'PATH_PREFIX': PATH_PREFIX,
+                                            'PATH': PATH,
+                                            'ENDPOINT': ENDPOINT,
+                                            'SCHEMA_BODY_VALIDATION': SCHEMA_BODY_VALIDATION,
+                                            'CONTENT_TYPE': CONTENT_TYPE
+                                        }),
+                                        id="ocid1.test.oc1..00000001.EXAMPLE-id-Value")],
+                                source="EXAMPLE-source-Value",
+                                type="EXAMPLE-type-Value")]))
 
 
         json_data_list = verify_path(json_data_list)
         payload = json.dumps(json_data_list)
-        json_data_list = { each['PATH'] : each for each in json_data_list}.values()
         put_logs_response = logging.put_logs(
             log_id="ocid1.log.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
             put_logs_details=oci.loggingingestion.models.PutLogsDetails(
@@ -564,15 +510,12 @@ def process_api_spec(api_id, compartmentId, environment, swagger, functionId, ho
                     oci.loggingingestion.models.LogEntryBatch(
                         entries=[
                             oci.loggingingestion.models.LogEntry(
-                                data="json_data_list: " + str(json_data_list),
+                                data="json_data_list: " + payload,
                                 id="ocid1.test.oc1..00000001.EXAMPLE-id-Value")],
                         source="EXAMPLE-source-Value",
                         type="EXAMPLE-type-Value")]))
 
-        # if (version == "2"):
-        #     payload = json.loads(json.dumps(group_by(payload)))
-        #     json_data_list = { each['PATH'] : each for each in payload}.values()
-        payload = json.loads(json.dumps(group_by(payload)))
+        payload = json.loads(json.dumps(json_data_list))
         print(payload)
         applyAuthApi(compartmentId=compartmentId, displayName=API_NAME, payload=payload, functionId=functionId, host=host, api_gateway_id=api_gateway_id, rate_limit=rate_limit)
 
