@@ -150,6 +150,42 @@ This is the schema validation for Swagger and Open API 3
 
 ![img.png](images/authApi_4.png)
 
+## Resource Principal
+
+[Resource Principal](https://docs.oracle.com/en-us/iaas/Content/Functions/Tasks/functionsaccessingociresources.htm) is another authentication type. This type of authentication replaces the use of **config** and **private key** files and do not expose sensitive data inside your **function**. 
+
+If you need, you can authenticate your **function** through **Resource Principal**, that let **OCI** to recognize the policy for your specific function's **OCID**, without exposing your private key or another sensitive data.
+You will need to declare a **Dynamic Group** with your function **OCID** and a policy allowing the use of the **OCI** resources in your code.
+
+**Dynamic Group: acme-func-dyn-grp**
+
+![img.png](images/resourceprincipal-1.png)
+
+**Policy**
+
+![img_1.png](images/resourceprincipal-2.png)
+
+You need to replace your code:
+
+![img_2.png](images/resourceprincipal-3.png)
+
+with
+
+![img_3.png](images/resourceprincipal-4.png)
+
+## Vault Secret
+
+Another way to not expose sensitive data is using **OCI Vault**.
+You can configure a **Vault** to store your sensitive data like passwords, endpoints, etc.
+
+![img_4.png](images/resourceprincipal-5.png)
+
+You can create a **Vault** and the secrets for use in your function code:
+
+![img_5.png](images/vault-1.png)
+
+Now, you can specify the **Secret OCID** to obtain the secret. The code are protected by **Resource Principal**.
+
 ## applyValidationApi
 
 The validation from OpenAPI spec is not possible today. The OCI API Gateway can implement validations with Authorization function. In the process of deploying the API from the OpenAPI spec, we can get the definitions and save it as a HEADER transformation, OCI API Gateway can do it for us, but cannot be used inside the authorization function because the HEADER transformation cannot be loaded in the function runtime execution.
@@ -260,3 +296,4 @@ To create an automation to:
 - [Adding Context Variables to Policies and HTTP Back End Definitions](https://docs.oracle.com/en-us/iaas/Content/APIGateway/Tasks/apigatewaycontextvariables.htm)
 - [IDCS API Rate Limits](https://docs.oracle.com/en/cloud/paas/identity-cloud/uaids/oracle-identity-cloud-service-pricing-models.html#GUID-C1505A67-9C21-484A-8395-04C4253FA1CD)
 - [Create Policies to Control Access to Network and API Gateway-Related Resources](https://docs.oracle.com/en-us/iaas/Content/APIGateway/Tasks/apigatewaycreatingpolicies.htm)
+- [SDK Authentication Methods](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdk_authentication_methods.htm)
