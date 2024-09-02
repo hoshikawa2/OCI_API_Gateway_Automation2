@@ -173,10 +173,19 @@ with
 
 ![img_3.png](images/resourceprincipal-4.png)
 
+This is the code to change:
+
+    signer = oci.auth.signers.get_resource_principals_signer()
+    logging = oci.loggingingestion.LoggingClient(config={}, signer=signer)
+
+
+See the [authRPApi.py](./files/authApi/authRPApi.py) code with the changes from **OCI Private Key** and **config** files authorization to **OCI Resource Principal** authorization. Remember to rename the **authRPApi.py** to **func.py** and build your function to test.
+
+
 ## Vault Secret
 
 Another way to not expose sensitive data is using **OCI Vault**.
-You can configure a **Vault** to store your sensitive data like passwords, endpoints, etc.
+You can configure a [Vault](https://www.ateam-oracle.com/post/using-the-oci-instance-principals-and-vault-with-python-to-retrieve-a-secret) to store your sensitive data like passwords, endpoints, etc.
 
 ![img_4.png](images/resourceprincipal-5.png)
 
@@ -185,6 +194,18 @@ You can create a **Vault** and the secrets for use in your function code:
 ![img_5.png](images/vault-1.png)
 
 Now, you can specify the **Secret OCID** to obtain the secret. The code are protected by **Resource Principal**.
+
+Declare the initialization for your secret client:
+
+    secret_client = oci.secrets.SecretsClient(config={}, signer=signer)
+
+Then you can obtain the secret value specifying your secret **OCID**:
+
+    ClientId = read_secret_value(secret_client, "ocid1.vaultsecret.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    ClientSecret = read_secret_value(secret_client, "ocid1.vaultsecret.oc1.iad.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+
+
+See the [authRPApi.py](./files/authApi/authRPApi.py) code with the changes to obtain your secrets. Remember to rename the **authRPApi.py** to **func.py** and build your function to test. 
 
 ## applyValidationApi
 
@@ -297,3 +318,4 @@ To create an automation to:
 - [IDCS API Rate Limits](https://docs.oracle.com/en/cloud/paas/identity-cloud/uaids/oracle-identity-cloud-service-pricing-models.html#GUID-C1505A67-9C21-484A-8395-04C4253FA1CD)
 - [Create Policies to Control Access to Network and API Gateway-Related Resources](https://docs.oracle.com/en-us/iaas/Content/APIGateway/Tasks/apigatewaycreatingpolicies.htm)
 - [SDK Authentication Methods](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdk_authentication_methods.htm)
+- [Using the OCI Instance Principals and Vault with Python to retrieve a Secret](https://www.ateam-oracle.com/post/using-the-oci-instance-principals-and-vault-with-python-to-retrieve-a-secret)
