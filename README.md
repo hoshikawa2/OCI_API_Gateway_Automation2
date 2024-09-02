@@ -193,7 +193,22 @@ You can create a **Vault** and the secrets for use in your function code:
 
 ![img_5.png](images/vault-1.png)
 
+This is the code to obtain the secret value after the **base64** translation.
+
+![img.png](images/base64translatecode.png)
+
 Now, you can specify the **Secret OCID** to obtain the secret. The code are protected by **Resource Principal**.
+
+Declare the method to obtain and decode **base64**:
+
+    def read_secret_value(secret_client, secret_id):
+        response = secret_client.get_secret_bundle(secret_id)
+        base64_Secret_content = response.data.secret_bundle_content.content
+        base64_secret_bytes = base64_Secret_content.encode('ascii')
+        base64_message_bytes = base64.b64decode(base64_secret_bytes)
+        secret_content = base64_message_bytes.decode('ascii')
+        return secret_content
+
 
 Declare the initialization for your secret client:
 
