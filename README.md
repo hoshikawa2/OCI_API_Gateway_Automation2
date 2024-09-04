@@ -315,6 +315,10 @@ To create an automation to:
 - In the OpenAPI 3 spec, when there is no path_prefix, the service adopts the first path from the spec. Example: path=/v1/test/service ==> path_prefix will be /v1 and path will be /test/service. Not guarantee that **OCI API Gateway** release adopts this approach
 - The services does not implement all specifications from Swagger and OpenAPI
 
+## Disclaimer
+
+>**IMPORTANT**: The source code must be used at your own risk. There is no support and/or link with any company. The source code is free to modify and was built solely for the purpose of helping the community
+
 ## Acknowledgments
 
 - Author: Cristiano Hoshikawa (Oracle LAD A-Team Solution Engineer)
