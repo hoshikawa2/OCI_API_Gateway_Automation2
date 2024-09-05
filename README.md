@@ -150,6 +150,30 @@ This is the schema validation for Swagger and Open API 3
 
 ![img.png](images/authApi_4.png)
 
+
+
+## Redact Validation Response
+
+The project has a schema validation from the spec. When the function is working with authentication, there is a routine for validate the body content, thanks to the open-source bravado library.
+
+The function send the body content and the **Swagger/Open API** specification to bravado libary and this action results in a message. There is a problem here. The results shows the content of the attributes and this need some kind of redaction.
+
+You can redact the attributes content with these codes.
+
+First, you need to import the **bravado** library for **validate_object**.
+
+![import-bravado.png](images/import-bravado.png)
+
+This code is responsible to redact your validation response:
+
+![redact-code.png](images/redact-code.png)
+
+The **remove_property**, **replace_escape_chars** and **replace_regex** methods translate some **escape** codes inside the specification. This works as a pre-validation for redaction. 
+
+And you can put in the main function code:
+
+![main-redact-routine.png](images/main-redact-routine.png)
+
 ## Resource Principal
 
 [Resource Principal](https://docs.oracle.com/en-us/iaas/Content/Functions/Tasks/functionsaccessingociresources.htm) is another authentication type. This type of authentication replaces the use of **config** and **private key** files and do not expose sensitive data inside your **function**. 
