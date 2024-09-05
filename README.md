@@ -174,6 +174,11 @@ And you can put in the main function code:
 
 ![main-redact-routine.png](images/main-redact-routine.png)
 
+The response will be like this:
+
+![redact-response.png](images/redact-response.png)
+
+
 ## Resource Principal
 
 [Resource Principal](https://docs.oracle.com/en-us/iaas/Content/Functions/Tasks/functionsaccessingociresources.htm) is another authentication type. This type of authentication replaces the use of **config** and **private key** files and do not expose sensitive data inside your **function**. 
