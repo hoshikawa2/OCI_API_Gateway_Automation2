@@ -448,6 +448,7 @@ def process_api_spec(api_id, compartmentId, environment, swagger, functionId, ho
 
             for method in spec["methods"]:
                 METHOD = method.lstrip().upper()
+                CONTENT_TYPE = ""
 
                 if (version == "3"):
                     if (has_path_endpoint(endPointOrigin)):
@@ -490,17 +491,14 @@ def process_api_spec(api_id, compartmentId, environment, swagger, functionId, ho
                         CONTENT_TYPE = "application/json"
                     except:
                         SCHEMA_BODY_VALIDATION = ""
-                        CONTENT_TYPE = ""
                 else:
                     SCHEMA_BODY_VALIDATION = ""
-                    CONTENT_TYPE = ""
                     try:
                         reference = str(fullSpec["paths"][spec["path"]][str(spec["methods"][0]).lower()]["parameters"][0]["schema"]["$ref"]).replace("#/definitions/", "")
                         SCHEMA_BODY_VALIDATION = reference + "," + api_id
                         CONTENT_TYPE = "application/json"
                     except:
                         SCHEMA_BODY_VALIDATION = ""
-                        CONTENT_TYPE = ""
 
                 # 2024-06-26 - Query Parameter
                 if (version == "3"):
@@ -514,17 +512,14 @@ def process_api_spec(api_id, compartmentId, environment, swagger, functionId, ho
                         CONTENT_TYPE = "application/json"
                     except:
                         SCHEMA_QUERY_VALIDATION = ""
-                        CONTENT_TYPE = ""
                 else:
                     SCHEMA_QUERY_VALIDATION = ""
-                    CONTENT_TYPE = ""
                     try:
                         reference = str(fullSpec["paths"][spec["path"]][str(spec["methods"][0]).lower()]["parameters"])
                         SCHEMA_QUERY_VALIDATION = reference #+ "," + api_id
                         CONTENT_TYPE = "application/json"
                     except:
                         SCHEMA_QUERY_VALIDATION = ""
-                        CONTENT_TYPE = ""
 
                 TYPE = type
                 ENVIRONMENT = environment
