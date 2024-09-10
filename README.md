@@ -164,7 +164,7 @@ First, you need to import the **bravado** library for **validate_object**.
 
 ![import-bravado.png](images/import-bravado.png)
 
-This code is responsible to redact your validation response:
+This code is responsible to beautify your validation response:
 
 ![redact-code.png](images/redact-code.png)
 
@@ -174,10 +174,23 @@ And you can put in the main function code:
 
 ![main-redact-routine.png](images/main-redact-routine.png)
 
-The response will be like this:
+You need to use a library called [Redaction.py](./files/authApi/Redaction.py), included in this material. This class find your patterns for attributes that need redaction.
 
-![redact-response.png](images/redact-response.png)
+Declare your patterns and attribute names:
 
+![redaction-2.png](images/redaction-2.png)
+
+So you can use the library like this:
+
+![redaction-1.png](images/redaction-1.png)
+
+When you request an REST service with this body content:
+
+![img.png](images/redaction-4.png)
+
+The response will be something like this:
+
+![redaction-3.png](images/redaction-3.png)
 
 ## Resource Principal
 
