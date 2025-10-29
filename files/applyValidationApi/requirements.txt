@@ -1,0 +1,9 @@
+fdk>=0.1.54
+requests
+oci
+cryptography
+six
+PyJWT
+py3_lru_cache
+simplejson
+PyYAML
